@@ -7,9 +7,12 @@
 <meta name="description" content="犬や猫のごはんを、家族の誰かがもうあげたかどうかを朝・夜のチェックで確認できるシンプルなWebアプリ「ごはんあげた？」の紹介ページです。">
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f7efe2;color:#342e29;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;line-height:1.85}.wrap{max-width:680px;margin:auto;padding:38px 22px 64px}h1{font-size:30px;margin:0 0 6px}.lead{font-size:17px;margin:0 0 34px}.card{background:#fffaf2;border:1px solid #e8d9c7;border-radius:18px;padding:22px;margin:18px 0}h2{font-size:20px;margin:0 0 10px}p{margin:8px 0}.apps{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.btn{display:block;text-align:center;text-decoration:none;color:#342e29;background:#ead7c8;border-radius:14px;padding:14px 10px;font-weight:700}.note{font-size:14px;color:#71665d}footer{margin-top:38px;padding-top:18px;border-top:1px solid #ddcdbd;font-size:13px;color:#776b61}@media(max-width:430px){.wrap{padding:28px 18px 48px}h1{font-size:27px}}
+
+.doodles{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:-1}.d{position:absolute;opacity:.16;font-size:30px;transform:rotate(var(--r))}.d1{left:4%;top:5%;--r:-18deg}.d2{right:6%;top:12%;--r:14deg}.d3{left:7%;top:28%;--r:20deg}.d4{right:5%;top:37%;--r:-12deg}.d5{left:3%;top:52%;--r:-8deg}.d6{right:8%;top:61%;--r:18deg}.d7{left:8%;top:76%;--r:12deg}.d8{right:4%;top:84%;--r:-20deg}.d9{left:43%;top:2%;--r:8deg}.d10{left:45%;top:94%;--r:-10deg}
+.card{box-shadow:0 3px 0 rgba(113,87,65,.05);transform:rotate(-.15deg)}.card:nth-of-type(even){transform:rotate(.15deg)}
 </style>
 </head>
-<body>
+<body><div class="doodles" aria-hidden="true"><span class="d d1">🦴</span><span class="d d2">🐟</span><span class="d d3">🐾</span><span class="d d4">● ● ●</span><span class="d d5">🐟</span><span class="d d6">🦴</span><span class="d d7">● ●</span><span class="d d8">🐾</span><span class="d d9">🦴</span><span class="d d10">🐟</span></div>
 <main class="wrap">
 <h1>ごはんあげた？</h1>
 <p class="lead">家族の「もうあげた？」「知らない」を、ひと目で分かるようにする小さなごはんチェックです。</p>
