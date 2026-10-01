@@ -25,6 +25,14 @@
   let auth = read(authKey, null), authWork, busy = false, changing = false;
   let message = '';
   const installed = navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
+  // iOS copies cookies once when a NEW Home Screen app is added.
+  // Transfer only an invitation, never credentials or offline operations.
+  const installCookie = `pet-meal-install-${pet}`;
+  const cookiePath = location.pathname.replace(/index\.html$/, '');
+  const cookieToken = () => document.cookie.split(';').map(s => s.trim()).find(s => s.startsWith(`${installCookie}=`))?.slice(installCookie.length + 1);
+  const clearInstallCookie = () => { document.cookie = `${installCookie}=; Path=${cookiePath}; Max-Age=0; SameSite=Strict; Secure`; };
+  let installToken = installed && /^[a-f0-9]{64}$/.test(cookieToken()) ? cookieToken() : null;
+  if (installed && shared) { clearInstallCookie(); installToken = null; }
   const helpStyle = document.createElement('style');
   helpStyle.textContent = '.share-guide{box-sizing:border-box;width:calc(100% - 32px);max-width:440px;max-height:90dvh;overflow:auto;border:1px solid #b9aa98;border-radius:18px;padding:24px;background:#fffaf2;color:#342e29;font:17px/1.7 -apple-system,BlinkMacSystemFont,sans-serif;touch-action:manipulation}.share-guide::backdrop{background:#0008}.share-guide h2{font-size:22px;line-height:1.4;margin:0 0 16px}.share-guide p{margin:12px 0}.share-guide ol{padding-left:26px}.share-guide li{margin:14px 0}.share-guide button{display:block;width:100%;min-height:48px;padding:12px;margin:12px 0 0;font:inherit;font-weight:600;border:1px solid #b9aa98;border-radius:10px;background:#f7efe2;color:#342e29;touch-action:manipulation}.share-guide .primary{background:#584936;color:white}.share-guide textarea{box-sizing:border-box;width:100%;min-height:100px;margin-top:8px;border:1px solid #b9aa98;border-radius:8px;padding:12px;font:16px/1.5 sans-serif}.share-guide .guide-note{font-size:14px}.share-guide [hidden]{display:none}';
   document.head.appendChild(helpStyle);
@@ -55,9 +63,25 @@
       }
     };
   }
+  async function installGuide(token) {
+    await acceptInvite(token);
+    if (shared?.token !== token) return;
+    document.cookie = `${installCookie}=${token}; Path=${cookiePath}; Max-Age=86400; SameSite=Strict; Secure`;
+    if (cookieToken() !== token) {
+      alert('引き継ぎの準備ができませんでした。ホーム画面のアプリで招待リンクを貼り付けてね。');
+      homeGuide(token); return;
+    }
+    const dialog = guide('<h2 id="guide-title">共有したままホーム画面に追加</h2><p>この共有表を、新しく追加するアプリへ引き継ぐ準備ができたよ。</p><ol><li><strong>この画面の共有ボタン（四角から上向き矢印）を押す</strong><br>見つからないときは、ブラウザのメニューを開いてね。</li><li><strong>「ホーム画面に追加」を選ぶ</strong><br>「Webアプリとして開く」が出たらオンのまま追加してね。</li><li><strong>追加したアイコンから開く</strong><br>ネットにつながった状態で「家族と共有中」と表示されるか確認してね。</li></ol><p class="guide-note">今日中に追加してね。すでにあるアイコンは自動では切り替わりません。引き継がれなければ招待リンクを一度貼り付けて参加できます。</p><button data-manual>追加済みのアプリで使う手順</button><button data-close>閉じる</button>');
+    dialog.querySelector('[data-manual]').onclick = () => { dialog.close(); homeGuide(token); };
+  }
   const homeButton = document.createElement('button');
   homeButton.textContent = 'ホーム画面のアプリで使う';
-  homeButton.onclick = () => homeGuide(shared.token);
+  homeButton.onclick = () => {
+    const token = shared.token;
+    const dialog = guide('<h2 id="guide-title">ホーム画面のアプリで使う</h2><button class="primary" data-install>これからホーム画面に追加する</button><button data-existing>すでにアイコンを追加している</button><button data-close>閉じる</button>');
+    dialog.querySelector('[data-install]').onclick = () => { dialog.close(); void installGuide(token); };
+    dialog.querySelector('[data-existing]').onclick = () => { dialog.close(); homeGuide(token); };
+  };
   controls.appendChild(homeButton);
   const persist = () => { if (shared) save(sharedKey, shared); };
   const project = (cells, queue) => {
@@ -240,13 +264,14 @@
     try {
       const next = Object.fromEntries(ids.map(id => [id, !!current()[id].value]));
       save(localKey, next); localStorage.removeItem(sharedKey);
+      clearInstallCookie(); installToken = null;
       local = next; shared = null; message = ''; render();
     } catch (_) { alert('端末に保存できませんでした。'); }
   };
-  async function acceptInvite(token) {
+  async function acceptInvite(token, ask = true) {
     if (shared?.token === token) return;
     if (shared?.queue.length) { alert('先に、今の共有待ちの操作を送信してね。'); return; }
-    if (!confirm(`${pet === 'cat' ? '猫' : '犬'}の共有表に参加しますか？ この端末のチェックとは別の表を表示します。`)) return;
+    if (ask && !confirm(`${pet === 'cat' ? '猫' : '犬'}の共有表に参加しますか？ この端末のチェックとは別の表を表示します。`)) return;
     await connect(async () => {
       const user = await identity();
       const response = await db(`invites/${token}`);
@@ -261,6 +286,7 @@
       if (data.pet !== pet) throw new Error('pet');
       const next = {room, token, cells: data.cells, queue: []};
       save(sharedKey, next); shared = next;
+      clearInstallCookie(); installToken = null;
     });
   }
   document.getElementById('join-sharing').onclick = () => {
@@ -290,17 +316,26 @@
     }
   });
   render();
-  window.addEventListener('online', () => void sync());
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) void sync(); });
+  const resumeInstall = () => {
+    if (installToken && !shared && navigator.onLine && !changing) void acceptInvite(installToken, false);
+    else void sync();
+  };
+  window.addEventListener('online', resumeInstall);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeInstall(); });
   // Poll only while the shared sheet is open. No Firebase connection in local mode.
   setInterval(() => void sync(), 5000);
   if (window.petMealInvite && !installed) {
     const token = window.petMealInvite;
-    const dialog = guide('<h2 id="guide-title">家族の共有表への招待</h2><p>どこで使うか選んでね。</p><button class="primary" data-home>ホーム画面のアプリで使う</button><p class="guide-note">すでに犬／猫のアイコンを追加している方はこちら。</p><button data-browser>この画面で使う</button><p class="guide-note">アプリを追加していなくても、この画面で使えます。</p><button data-close>あとで参加する</button>');
+    const dialog = guide('<h2 id="guide-title">家族の共有表への招待</h2><p>どこで使うか選んでね。</p><button class="primary" data-install>参加してホーム画面に追加する</button><p class="guide-note">初めて使う方はこちら。参加してから追加します。</p><button data-home>追加済みのホーム画面のアプリで使う</button><p class="guide-note">すでに犬／猫のアイコンを追加している方はこちら。</p><button data-browser>この画面で使う</button><p class="guide-note">追加せず、この画面で使うこともできます。</p><button data-close>あとで参加する</button>');
+    dialog.querySelector('[data-install]').onclick = () => { dialog.close(); void installGuide(token); };
     dialog.querySelector('[data-home]').onclick = () => { dialog.close(); homeGuide(token); };
     dialog.querySelector('[data-browser]').onclick = () => { dialog.close(); void acceptInvite(token); };
   }
   else if (window.petMealInvite) void acceptInvite(window.petMealInvite);
+  else if (installToken && !shared) {
+    if (!navigator.onLine) { message = '共有の引き継ぎ待ち・ネットにつながると参加します'; render(); }
+    resumeInstall();
+  }
   else void sync();
   // Let installed copies switch to the completely precached release on request.
   if ('serviceWorker' in navigator) {
