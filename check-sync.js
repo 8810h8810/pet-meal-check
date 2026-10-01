@@ -24,6 +24,41 @@
   if (!shared || !/^[a-f0-9]{64}$/.test(shared.room) || !Array.isArray(shared.queue)) shared = null;
   let auth = read(authKey, null), authWork, busy = false, changing = false;
   let message = '';
+  const installed = navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
+  const helpStyle = document.createElement('style');
+  helpStyle.textContent = '.share-guide{box-sizing:border-box;width:calc(100% - 32px);max-width:440px;max-height:90dvh;overflow:auto;border:1px solid #b9aa98;border-radius:18px;padding:24px;background:#fffaf2;color:#342e29;font:17px/1.7 -apple-system,BlinkMacSystemFont,sans-serif;touch-action:manipulation}.share-guide::backdrop{background:#0008}.share-guide h2{font-size:22px;line-height:1.4;margin:0 0 16px}.share-guide p{margin:12px 0}.share-guide ol{padding-left:26px}.share-guide li{margin:14px 0}.share-guide button{display:block;width:100%;min-height:48px;padding:12px;margin:12px 0 0;font:inherit;font-weight:600;border:1px solid #b9aa98;border-radius:10px;background:#f7efe2;color:#342e29;touch-action:manipulation}.share-guide .primary{background:#584936;color:white}.share-guide textarea{box-sizing:border-box;width:100%;min-height:100px;margin-top:8px;border:1px solid #b9aa98;border-radius:8px;padding:12px;font:16px/1.5 sans-serif}.share-guide .guide-note{font-size:14px}.share-guide [hidden]{display:none}';
+  document.head.appendChild(helpStyle);
+  function guide(html) {
+    const previous = document.activeElement;
+    const dialog = document.createElement('dialog');
+    dialog.className = 'share-guide';
+    dialog.innerHTML = html;
+    dialog.setAttribute('aria-labelledby', 'guide-title');
+    document.body.appendChild(dialog);
+    dialog.addEventListener('close', () => { dialog.remove(); previous?.focus(); });
+    dialog.querySelector('[data-close]')?.addEventListener('click', () => dialog.close());
+    dialog.showModal();
+    return dialog;
+  }
+  function homeGuide(token) {
+    const url = `${location.origin}${canonicalPath(location.pathname)}#invite=${token}`;
+    const dialog = guide('<h2 id="guide-title">ホーム画面のアプリで使う</h2><p>この画面で参加しても、ホーム画面のアプリが共有になっているかは、アプリを開いて確認してね。</p><ol><li><strong>下のボタンで招待リンクをコピー</strong><button class="primary" data-copy>招待リンクをコピー</button><p role="status" data-copy-status></p><textarea aria-label="コピーする招待リンク" data-link hidden readonly></textarea></li><li><strong>ホーム画面に戻って、犬／猫のアプリを開く</strong></li><li><strong>表の下の「招待リンクで参加」を押す</strong><br>リンクを貼り付けて「この共有表に参加する」を押してね。</li></ol><p class="guide-note">初回の設定だよ。参加後は、いつものアイコンから使えるよ。</p><button data-close>閉じる</button>');
+    const field = dialog.querySelector('[data-link]');
+    field.value = url;
+    dialog.querySelector('[data-copy]').onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(url);
+        dialog.querySelector('[data-copy-status]').textContent = 'コピーしたよ。次はホーム画面に戻って、アプリを開こう。';
+      } catch (_) {
+        field.hidden = false; field.focus(); field.select();
+        dialog.querySelector('[data-copy-status]').textContent = 'コピーできなかったので、下のリンクを長押ししてコピーしてね。';
+      }
+    };
+  }
+  const homeButton = document.createElement('button');
+  homeButton.textContent = 'ホーム画面のアプリで使う';
+  homeButton.onclick = () => homeGuide(shared.token);
+  controls.appendChild(homeButton);
   const persist = () => { if (shared) save(sharedKey, shared); };
   const project = (cells, queue) => {
     const next = structuredClone(cells || empty());
@@ -49,6 +84,7 @@
     document.getElementById('start-sharing').hidden = !!shared;
     document.getElementById('invite').hidden = !shared;
     document.getElementById('stop-sharing').hidden = !shared;
+    homeButton.hidden = installed || !shared;
     for (const button of controls.querySelectorAll('button')) button.disabled = changing;
     status.textContent = changing ? '接続しています…' : message || (shared
       ? (shared.queue.length ? '端末に保存済み・共有待ち' : '家族と共有中') : 'この端末だけに保存');
@@ -228,14 +264,21 @@
     });
   }
   document.getElementById('join-sharing').onclick = () => {
-    const input = prompt('家族から届いた招待リンクを貼ってね');
-    if (!input) return;
-    try {
-      const url = new URL(input);
-      const token = new URLSearchParams(url.hash.slice(1)).get('invite');
-      if (url.origin !== location.origin || canonicalPath(url.pathname) !== canonicalPath(location.pathname) || !/^[a-f0-9]{64}$/.test(token)) throw new Error();
-      void acceptInvite(token);
-    } catch (_) { alert('この表の招待リンクを入れてね。犬と猫は別々だよ。'); }
+    const dialog = guide('<h2 id="guide-title">招待リンクで参加</h2><p>家族から届いたリンクをコピーして、この欄に貼り付けてね。</p><label for="join-link">招待リンク</label><textarea id="join-link" placeholder="ここを長押しして「ペースト」" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea><button data-paste>コピーしたリンクを貼り付ける</button><p role="status" data-join-status></p><button class="primary" data-join>この共有表に参加する</button><p class="guide-note">参加すると、家族と同じ表が表示されます。犬と猫の招待リンクは別々だよ。</p><button data-close>キャンセル</button>');
+    const field = dialog.querySelector('textarea');
+    const note = dialog.querySelector('[data-join-status]');
+    dialog.querySelector('[data-paste]').onclick = async () => {
+      try { field.value = await navigator.clipboard.readText(); note.textContent = '貼り付けたよ。「この共有表に参加する」を押してね。'; }
+      catch (_) { field.focus(); note.textContent = '入力欄を長押しして「ペースト」を選んでね。'; }
+    };
+    dialog.querySelector('[data-join]').onclick = () => {
+      try {
+        const url = new URL(field.value.trim());
+        const token = new URLSearchParams(url.hash.slice(1)).get('invite');
+        if (url.origin !== location.origin || canonicalPath(url.pathname) !== canonicalPath(location.pathname) || !/^[a-f0-9]{64}$/.test(token)) throw new Error();
+        dialog.close(); void acceptInvite(token);
+      } catch (_) { note.textContent = 'この表の招待リンクを貼ってね。犬と猫は別々だよ。'; field.focus(); }
+    };
   };
   window.addEventListener('storage', event => {
     if (event.key === sharedKey || event.key === localKey) {
@@ -251,7 +294,13 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) void sync(); });
   // Poll only while the shared sheet is open. No Firebase connection in local mode.
   setInterval(() => void sync(), 5000);
-  if (window.petMealInvite) void acceptInvite(window.petMealInvite);
+  if (window.petMealInvite && !installed) {
+    const token = window.petMealInvite;
+    const dialog = guide('<h2 id="guide-title">家族の共有表への招待</h2><p>どこで使うか選んでね。</p><button class="primary" data-home>ホーム画面のアプリで使う</button><p class="guide-note">すでに犬／猫のアイコンを追加している方はこちら。</p><button data-browser>この画面で使う</button><p class="guide-note">アプリを追加していなくても、この画面で使えます。</p><button data-close>あとで参加する</button>');
+    dialog.querySelector('[data-home]').onclick = () => { dialog.close(); homeGuide(token); };
+    dialog.querySelector('[data-browser]').onclick = () => { dialog.close(); void acceptInvite(token); };
+  }
+  else if (window.petMealInvite) void acceptInvite(window.petMealInvite);
   else void sync();
   // Let installed copies switch to the completely precached release on request.
   if ('serviceWorker' in navigator) {
