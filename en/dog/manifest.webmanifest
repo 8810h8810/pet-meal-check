@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Dog Feeding Check",
+  "short_name": "Fed?",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4eadb",
+  "theme_color": "#f4eadb",
+  "icons": [
+    {
+      "src": "../../dog-icon.jpeg%20.jpg",
+      "sizes": "880x886",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
