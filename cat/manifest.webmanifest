@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "ねこ ごはんあげた？",
+  "short_name": "ごはんあげた？",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7efe2",
+  "theme_color": "#f7efe2",
+  "icons": [
+    {
+      "src": "../cat-icon.jpeg%20.jpg",
+      "sizes": "880x886",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
