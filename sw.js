@@ -1,4 +1,4 @@
-const CACHE = 'pet-meal-pwa-v7';
+const CACHE = 'pet-meal-pwa-v8';
 const ROOT = new URL('./', self.location.href);
 const ASSETS = [
   './', './index.html', './cat/', './cat/index.html',
