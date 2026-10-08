@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const inputSchema = z.object({ keyword: z.enum(["ドッグフード", "キャットフード", "ペットのおやつ", "ペット用食器"]) });
+const inputSchema = z.object({ keyword: z.enum(["ドッグフード", "キャットフード", "ペットのおやつ", "ペット用食器", "ペットベッド", "リード", "ペット用おもちゃ", "ペットシーツ", "うんち袋", "消臭スプレー", "ペットブラシ"]) });
 const endpoint = "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701";
 export type RakutenProduct = { name: string; price: number; affiliateUrl: string };
 type Item = { itemName?: string; itemPrice?: number; affiliateUrl?: string };
