@@ -1,0 +1,80 @@
+/* Optional Rakuten auto-discovery, isolated from the feeding tracker and family sync. */
+(() => {
+  const dialog = document.getElementById("goods-dialog");
+  if (!dialog || dialog.querySelector("#rakuten-auto")) return;
+  const labels = ["ドッグフード","キャットフード","ペットのおやつ","ペット用食器","ペットベッド","リード","ペット用おもちゃ","ペットシーツ","うんち袋","消臭スプレー","ペットブラシ"];
+  const section = document.createElement("section");
+  section.id = "rakuten-auto";
+  section.className = "rakuten-auto";
+  const heading = document.createElement("h3");
+  heading.textContent = "ほかのペット用品を探す";
+  const note = document.createElement("p");
+  note.className = "goods-note";
+  note.textContent = "PR｜楽天市場の商品を検索します。価格・在庫・送料はリンク先で確認してください。";
+  const categories = document.createElement("div");
+  categories.className = "rakuten-categories";
+  const status = document.createElement("p");
+  status.className = "goods-note";
+  status.setAttribute("role","status");
+  const results = document.createElement("ul");
+  results.className = "rakuten-results";
+  section.append(heading,note,categories,status,results);
+  dialog.append(section);
+  const endpoint = () => document.querySelector('meta[name="rakuten-api-base"]')?.content?.trim() || "";
+  let controller = null;
+  let sequence = 0;
+  function setBusy(busy) {
+    for (const button of categories.querySelectorAll("button")) button.disabled = busy;
+  }
+  async function search(keyword) {
+    const api = endpoint();
+    if (!api) { status.textContent = "自動検索は準備中です。上のおすすめ商品は引き続きご覧いただけます。"; return; }
+    let url;
+    try {
+      url = new URL(api);
+      if (url.protocol !== "https:") throw new Error("HTTPS required");
+      url.pathname = url.pathname.replace(/\/$/,"") + "/products";
+      url.searchParams.set("keyword",keyword);
+    } catch { status.textContent = "検索先の設定を確認してください。"; return; }
+    controller?.abort();
+    controller = new AbortController();
+    const current = ++sequence;
+    setBusy(true);
+    results.replaceChildren();
+    status.textContent = "検索中…";
+    try {
+      const response = await fetch(url.toString(), {signal:controller.signal});
+      if (!response.ok) throw new Error("Unavailable");
+      const data = await response.json();
+      if (current !== sequence) return;
+      const products = Array.isArray(data.products) ? data.products : [];
+      for (const product of products.slice(0,5)) {
+        if (typeof product.name !== "string" || !Number.isFinite(product.price) || typeof product.affiliateUrl !== "string") continue;
+        let linkUrl;
+        try {
+          linkUrl = new URL(product.affiliateUrl);
+          if (linkUrl.protocol !== "https:" || !["a.r10.to","hb.afl.rakuten.co.jp","rakuten.co.jp"].includes(linkUrl.hostname) && !linkUrl.hostname.endsWith(".rakuten.co.jp")) continue;
+        } catch { continue; }
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = linkUrl.href;
+        a.target = "_blank";
+        a.rel = "nofollow sponsored noopener noreferrer";
+        a.textContent = product.name + "｜" + product.price.toLocaleString("ja-JP") + "円 ↗";
+        li.append(a);
+        results.append(li);
+      }
+      status.textContent = results.children.length ? "楽天市場の商品（PR）" : "該当する商品が見つかりませんでした。";
+    } catch (error) {
+      if (error.name !== "AbortError") status.textContent = "現在、商品を取得できません。上のおすすめ商品はご覧いただけます。";
+    } finally { if (current === sequence) setBusy(false); }
+  }
+  for (const keyword of labels) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = keyword;
+    button.addEventListener("click", () => search(keyword));
+    categories.append(button);
+  }
+  dialog.addEventListener("close", () => {controller?.abort(); sequence++; setBusy(false);});
+})();
