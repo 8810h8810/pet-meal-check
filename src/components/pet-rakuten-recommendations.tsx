@@ -40,14 +40,17 @@ export function PetRakutenRecommendations({ language = "ja" }: { language?: "ja"
         ))}
       </div>
       {loading && <p className="mt-2 text-xs">{language === "en" ? "Searching…" : "検索中…"}</p>}
+      {selected && !loading && products.length > 0 && language === "en" && (
+        <p className="mt-2 text-xs text-muted-foreground">Products ship from Japanese Rakuten sellers. Original Japanese product titles and prices in JPY are shown for accuracy.</p>
+      )}
       {selected && !loading && products.length > 0 && (
         <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto">
           {products.map((product) => (
             <li key={product.affiliateUrl}>
               <a className="flex min-w-0 items-center gap-2 rounded-lg border border-foreground/20 p-2 text-xs"
                 href={product.affiliateUrl} target="_blank" rel="sponsored noopener noreferrer">
-                <span className="min-w-0 flex-1 truncate">{product.name}</span>
-                <span className="shrink-0">{product.price.toLocaleString("ja-JP")}円</span>
+                <span className="min-w-0 flex-1 truncate" title={product.name}>{language === "en" && selected ? `${englishLabels[selected]} · ` : ""}{product.name}</span>
+                <span className="shrink-0">{language === "en" ? `¥${product.price.toLocaleString("en-US")}` : `${product.price.toLocaleString("ja-JP")}円`}</span>
                 <span className="shrink-0 font-bold">PR ↗</span>
               </a>
             </li>
