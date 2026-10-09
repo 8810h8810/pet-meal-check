@@ -26,7 +26,17 @@ export default {
   const params=new URLSearchParams({applicationId:app,affiliateId:affiliate,keyword,format:"json",formatVersion:"2",hits:"20"});
   try {
    const response=await fetch(endpoint+"?"+params,{headers:{accessKey:key,Origin:allowed,Referer:allowed+"/"},signal:AbortSignal.timeout(8000)});
-   if(!response.ok) return json({products:[],status:"api_error"},502,allowed);
+   if(!response.ok) {
+    // Diagnostic codes only: never expose credentials, upstream URLs, or response text.
+    let errorCode = "unknown";
+    try {
+      const problem = await response.json();
+      const candidate = typeof problem?.error === "string" ? problem.error : "";
+      const known = new Set(["wrong_parameter","not_found","too_many_requests","system_error","service_unavailable","invalid_access_key","invalid_application_id","forbidden","unauthorized"]);
+      if (known.has(candidate)) errorCode = candidate;
+    } catch {}
+    return json({products:[],status:"api_error",upstreamStatus:response.status,errorCode},502,allowed);
+   }
    const data=await response.json();
    const entries=Array.isArray(data.items)?data.items:Array.isArray(data.Items)?data.Items:[];
    const products=entries.map(x=>x?.Item??x).filter(x=>typeof x?.itemName==="string"&&typeof x?.itemPrice==="number"&&typeof x?.affiliateUrl==="string").filter(x=>{
