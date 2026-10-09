@@ -1,0 +1,8 @@
+name = "pet-meal-rakuten-api"
+main = "worker.js"
+compatibility_date = "2026-10-09"
+workers_dev = true
+
+# Set ALLOWED_ORIGIN and the three Rakuten credentials in
+# Cloudflare Dashboard > Settings > Variables and Secrets.
+# Never commit Rakuten credentials to this repository.
