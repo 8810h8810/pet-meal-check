@@ -41,7 +41,7 @@ export default {
    const entries=Array.isArray(data.items)?data.items:Array.isArray(data.Items)?data.Items:[];
    const products=entries.map(x=>x?.Item??x).filter(x=>typeof x?.itemName==="string"&&typeof x?.itemPrice==="number"&&typeof x?.affiliateUrl==="string").filter(x=>{
     try {const u=new URL(x.affiliateUrl);return u.protocol==="https:"&&(u.hostname==="a.r10.to"||u.hostname==="hb.afl.rakuten.co.jp"||u.hostname==="rakuten.co.jp"||u.hostname.endsWith(".rakuten.co.jp"));}catch{return false;}
-   }).filter(x=>!/ふるさと納税|返礼品|寄附金|寄付金/.test(x.itemName)).slice(0,5).map(x=>({name:x.itemName,price:x.itemPrice,affiliateUrl:x.affiliateUrl}));
+   }).filter(x=>!/ふるさと納税|返礼品|寄附金|寄付金/.test(x.itemName)).slice(0,5).map(x=>{const raw=x.mediumImageUrls?.[0]??x.smallImageUrls?.[0]??x.mediumImageUrl??x.smallImageUrl;const candidate=typeof raw==="string"?raw:typeof raw?.imageUrl==="string"?raw.imageUrl:"";let imageUrl="";try{const u=new URL(candidate);if(u.protocol==="https:"&&(u.hostname==="thumbnail.image.rakuten.co.jp"||u.hostname==="image.rakuten.co.jp"))imageUrl=u.href;}catch{}return {name:x.itemName,price:x.itemPrice,affiliateUrl:x.affiliateUrl,imageUrl};});
    return json({products,status:products.length?"ok":"no_products"},200,allowed);
   } catch {return json({products:[],status:"network_error"},502,allowed);}
  }
