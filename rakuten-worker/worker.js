@@ -35,5 +35,4 @@ export default {
    return json({products,status:products.length?"ok":"no_products"},200,allowed);
   } catch {return json({products:[],status:"network_error"},502,allowed);}
  }
-}
 };
