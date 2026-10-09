@@ -34,3 +34,22 @@ Worker公開後、`index.html` の `<meta name="rakuten-api-base" content="">` �
 - GitHub Pages単体では楽天の秘密キーを安全に保管できないので、Workerのようなサーバー処理が必要。
 - APIの実接続、無料枠、アフィリエイト成果計測は未確認。
 - CORSはブラウザ制約であり、Workerへの直接アクセス自体を完全に制限する認証機構ではない。利用量を観測すること。
+
+## Cloudflare Git接続のビルド設定（このリポジトリ用）
+- GitHubリポジトリ: `8810h8810/pet-meal-check`
+- ブランチ: `feature/rakuten-auto-products`（検証用。本番mainは変更しない）
+- ルートディレクトリ: `rakuten-worker`
+- ビルドコマンド: `npm install`（空欄が許容されるなら空欄でも可）
+- デプロイコマンド: `npx wrangler deploy`
+- プレビューコマンド: `npx wrangler versions upload`（プレビューを利用する場合。不要なら無効化）
+- Worker名: `pet-meal-rakuten-api`。Cloudflareで作成済みの同名Workerに接続されているか確認。
+
+`wrangler.toml` と `package.json` はこのディレクトリ内に配置済み。
+GitHub連携後、Cloudflareの **デプロイ履歴が成功になったこと** を確認する。GitHub連携だけでは成功とはみなさない。
+
+## 本番に必要な設定
+Cloudflare > Worker > 設定 > 変数とシークレットで、`ALLOWED_ORIGIN` と楽天の3つのSecretを登録する。Secretの値はチャット・GitHubに貼らない。変更後に再デプロイが必要になる場合がある。
+
+接続確認: Worker URL の `/products?keyword=ドッグフード` を開き、`status:ok` か商品なしの応答を確認。未設定時の `not_configured`、楽天側エラーの `api_error` は未完成を意味する。
+
+**注意:** API接続に成功するまで `index.html` の空の `rakuten-api-base` を設定せず、`main` にマージしない。
