@@ -60,7 +60,26 @@
         a.href = linkUrl.href;
         a.target = "_blank";
         a.rel = "nofollow sponsored noopener noreferrer";
-        a.textContent = product.name + "｜" + product.price.toLocaleString("ja-JP") + "円 ↗";
+        if (typeof product.imageUrl === "string" && product.imageUrl) {
+          try {
+            const imageUrl = new URL(product.imageUrl);
+            if (imageUrl.protocol === "https:" && ["thumbnail.image.rakuten.co.jp","image.rakuten.co.jp"].includes(imageUrl.hostname)) {
+              const img = document.createElement("img");
+              img.src = imageUrl.href;
+              img.alt = "";
+              img.loading = "lazy";
+              img.width = 96;
+              img.height = 96;
+              img.style.cssText = "width:96px;height:96px;object-fit:contain;flex-shrink:0";
+              img.addEventListener("error", () => img.remove());
+              a.append(img);
+              a.style.cssText = "display:flex;align-items:center;gap:12px;text-decoration:none";
+            }
+          } catch {}
+        }
+        const title = document.createElement("span");
+        title.textContent = product.name + "｜" + product.price.toLocaleString("ja-JP") + "円 ↗";
+        a.append(title);
         li.append(a);
         results.append(li);
       }
