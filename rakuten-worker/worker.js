@@ -23,9 +23,9 @@ export default {
   if(!categories.has(keyword)) return json({products:[],status:"invalid_category"},400,allowed);
   const {RAKUTEN_APPLICATION_ID:app,RAKUTEN_ACCESS_KEY:key,RAKUTEN_AFFILIATE_ID:affiliate}=env;
   if(!app||!key||!affiliate) return json({products:[],status:"not_configured"},503,allowed);
-  const params=new URLSearchParams({applicationId:app,affiliateId:affiliate,keyword,format:"json",formatVersion:"2",hits:"20"});
+  const params=new URLSearchParams({applicationId:app,accessKey:key,affiliateId:affiliate,keyword,format:"json",formatVersion:"2",hits:"20"});
   try {
-   const response=await fetch(endpoint+"?"+params,{headers:{accessKey:key,Origin:allowed,Referer:allowed+"/"},signal:AbortSignal.timeout(8000)});
+   const response=await fetch(endpoint+"?"+params,{headers:{Origin:allowed,Referer:allowed+"/"},signal:AbortSignal.timeout(8000)});
    if(!response.ok) {
     // Diagnostic codes only: never expose credentials, upstream URLs, or response text.
     let errorCode = "unknown";
