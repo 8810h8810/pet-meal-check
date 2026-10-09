@@ -4,6 +4,13 @@ compatibility_date = "2026-10-09"
 workers_dev = true
 keep_vars = true
 
-# Set ALLOWED_ORIGIN and the three Rakuten credentials in
-# Cloudflare Dashboard > Settings > Variables and Secrets.
-# Never commit Rakuten credentials to this repository.
+[vars]
+ADDITIONAL_ORIGINS = "https://unchi-shita-mvp-one.blond-ball-8409.chatgpt.site"
+
+[[durable_objects.bindings]]
+name = "SEARCH_COORDINATOR"
+class_name = "SearchCoordinator"
+
+[[migrations]]
+tag = "rakuten-search-coordinator-v1"
+new_sqlite_classes = ["SearchCoordinator"]
