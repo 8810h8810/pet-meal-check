@@ -44,7 +44,11 @@
     status.textContent = "検索中…";
     try {
       const response = await fetch(url.toString(), {signal:controller.signal});
-      if (!response.ok) throw new Error("Unavailable");
+      if (!response.ok) {
+        let detail = "";
+        try { const body = await response.json(); detail = typeof body?.status === "string" ? body.status : ""; } catch {}
+        throw new Error("HTTP " + response.status + (detail ? " / " + detail : ""));
+      }
       const data = await response.json();
       if (current !== sequence) return;
       const products = Array.isArray(data.products) ? data.products : [];
@@ -85,7 +89,10 @@
       }
       status.textContent = results.children.length ? "楽天市場の商品（PR）" : "該当する商品が見つかりませんでした。";
     } catch (error) {
-      if (error.name !== "AbortError") status.textContent = "現在、商品を取得できません。上のおすすめ商品はご覧いただけます。";
+      if (error.name !== "AbortError") {
+        const detail = /^HTTP \d{3}(?: \/ [a-z_]+)?$/.test(error.message) ? error.message : "通信エラー（CORS・ネットワーク等）";
+        status.textContent = "現在、商品を取得できません（" + detail + "）。上のおすすめ商品はご覧いただけます。";
+      }
     } finally { if (current === sequence) setBusy(false); }
   }
   for (const keyword of labels) {
