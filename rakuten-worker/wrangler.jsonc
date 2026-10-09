@@ -3,9 +3,6 @@
   "main": "worker.js",
   "compatibility_date": "2026-09-01",
   "workers_dev": true,
-  "vars": {
-    "ALLOWED_ORIGIN": "https://8810h8810.github.io"
-  },
   "secrets": {
     "required": [
       "RAKUTEN_APPLICATION_ID",
