@@ -19,6 +19,9 @@
   const results = document.createElement("ul");
   results.className = "rakuten-results";
   section.append(heading,note,categories,status,results);
+  const style = document.createElement("style");
+  style.textContent = `#rakuten-auto .rakuten-results{list-style:none;padding:0;margin:12px 0 0}#rakuten-auto .rakuten-results li{list-style:none;margin:0;padding:12px 0;border-bottom:1px solid #ddd0c3}#rakuten-auto .rakuten-results li::marker{content:""}#rakuten-auto .rakuten-product-link{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;min-width:0}#rakuten-auto .rakuten-product-link img{width:96px;height:96px;object-fit:contain;flex-shrink:0}#rakuten-auto .rakuten-product-info{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}#rakuten-auto .rakuten-product-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;line-height:1.45;font-weight:600}#rakuten-auto .rakuten-product-price{font-weight:700;white-space:nowrap}`;
+  section.append(style);
   dialog.append(section);
   const endpoint = () => location.hostname.endsWith(".pages.dev") ? location.origin + "/api" : (document.querySelector('meta[name="rakuten-api-base"]')?.content?.trim() || "");
   let controller = null;
@@ -62,6 +65,7 @@
         const li = document.createElement("li");
         const a = document.createElement("a");
         a.href = linkUrl.href;
+        a.className = "rakuten-product-link";
         a.target = "_blank";
         a.rel = "nofollow sponsored noopener noreferrer";
         if (typeof product.imageUrl === "string" && product.imageUrl) {
@@ -74,16 +78,23 @@
               img.loading = "lazy";
               img.width = 96;
               img.height = 96;
-              img.style.cssText = "width:96px;height:96px;object-fit:contain;flex-shrink:0";
+
               img.addEventListener("error", () => img.remove());
               a.append(img);
-              a.style.cssText = "display:flex;align-items:center;gap:12px;text-decoration:none";
+
             }
           } catch {}
         }
+        const info = document.createElement("span");
+        info.className = "rakuten-product-info";
         const title = document.createElement("span");
-        title.textContent = product.name + "｜" + product.price.toLocaleString("ja-JP") + "円 ↗";
-        a.append(title);
+        title.className = "rakuten-product-name";
+        title.textContent = product.name;
+        const price = document.createElement("span");
+        price.className = "rakuten-product-price";
+        price.textContent = product.price.toLocaleString("ja-JP") + "円 ↗";
+        info.append(title,price);
+        a.append(info);
         li.append(a);
         results.append(li);
       }
