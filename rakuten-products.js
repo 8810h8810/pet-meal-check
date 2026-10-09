@@ -20,7 +20,7 @@
   results.className = "rakuten-results";
   section.append(heading,note,categories,status,results);
   dialog.append(section);
-  const endpoint = () => document.querySelector('meta[name="rakuten-api-base"]')?.content?.trim() || "";
+  const endpoint = () => location.hostname.endsWith(".pages.dev") ? location.origin + "/api" : (document.querySelector('meta[name="rakuten-api-base"]')?.content?.trim() || "");
   let controller = null;
   let sequence = 0;
   function setBusy(busy) {
