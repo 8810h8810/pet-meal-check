@@ -1,6 +1,8 @@
-const CACHE = 'pet-meal-pwa-v10';
+const CACHE = 'pet-meal-pwa-v11-i18n';
 const ROOT = new URL('./', self.location.href);
 const ASSETS = [
+  './i18n.js', './i18n-data.js', './i18n-pages.js', './i18n.css', './rakuten-products.js',
+  './privacy/', './privacy/index.html', './en/privacy/', './en/privacy/index.html', './about/', './about/index.html',
   './', './index.html', './cat/', './cat/index.html',
   "./sharing-en.js", "./en/dog/", "./en/dog/index.html", "./en/cat/", "./en/cat/index.html", "./en/dog/manifest.webmanifest", "./en/cat/manifest.webmanifest", "./en/cat/%E3%81%AD%E3%81%93%E3%82%A2%E3%83%95%E3%82%9A%E3%83%AA%E6%B5%B7%E5%A4%96%E7%89%88.JPG", "./en/dog/%E3%81%84%E3%81%AC%E3%81%82%E3%81%B5%E3%82%9A%E3%82%8A%E6%B5%B7%E5%A4%96%E7%89%88.JPG",
   './manifest.webmanifest', './cat/manifest.webmanifest', './pwa.js', './check-sync.js',
