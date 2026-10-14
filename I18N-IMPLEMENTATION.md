@@ -84,3 +84,16 @@ JavaScriptの構文チェックと `git diff --check` も実施。
 - Google公式資料：https://developers.google.com/tag-platform/security/guides/consent および https://developers.google.com/tag-platform/security/guides/privacy
 - tests/analytics-consent.test.cjs の6項目、従来の13項目に合格。DOMダブルでの検証であり、実ブラウザの通信・GA管理画面・実Cookie削除は未検証。
 - キャッシュv13に同意スクリプトとCSSを追加。本番反映は未実施。広告配信・有料契約を開始する変更ではない。
+
+## 家族共有の回帰検証（2026-10-14追加）
+
+`node tests/shared-sync.test.cjs`：6項目成功。実際の i18n.js / check-sync.js を、独立した保存領域を持つ2つのDOMクライアントで実行。通信先のFirebaseを、ETagと条件付きPUTを扱うインメモリ応答に置き換える。実ネットワークや実データへは接続していない。
+
+- 犬・猫それぞれで、日本語ページと既存英語ページが同じ共有表のチェックを同期。
+- 4言語切り替えは共有データ・送信回数を変更しない。
+- オフラインの操作を保存し、言語変更後・再接続後に同期。
+- 異なるマスの同時操作で古いETagの412応答を再試行し、両操作を保持。
+- 同じマスの古い操作が競合すると、先に共有された値を残し、翻訳された案内を表示。
+- 通信失敗時は共有待ちキューを保持し、復帰後に再送。
+
+共有処理の実装は変更していない。従来13項目・解析同意6項目・共有6項目、計25項目に成功。これらの模擬テストで、Firebaseの本番アクセスルール、iPhoneのストレージ分離、既存PWA更新、実機オフライン復帰、実Cookie削除を検証したことにはしない。公開前の実機確認は引き続き必要。
