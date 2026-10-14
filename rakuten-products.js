@@ -92,7 +92,7 @@
         title.textContent = product.name;
         const price = document.createElement("span");
         price.className = "rakuten-product-price";
-        price.textContent = product.price.toLocaleString("ja-JP") + "円 ↗";
+        price.textContent = new Intl.NumberFormat(window.petMealI18n?.language || "ja", {style:"currency",currency:"JPY"}).format(product.price) + " ↗";
         info.append(title,price);
         a.append(info);
         li.append(a);
@@ -102,7 +102,7 @@
     } catch (error) {
       if (error.name !== "AbortError") {
         const detail = /^HTTP \d{3}(?: \/ [a-z_]+)?$/.test(error.message) ? error.message : "通信エラー（CORS・ネットワーク等）";
-        status.textContent = "現在、商品を取得できません（" + detail + "）。上のおすすめ商品はご覧いただけます。";
+        status.textContent = (window.petMealI18n?.translate("商品を取得できません。上のおすすめ商品はご覧いただけます。") || "商品を取得できません。上のおすすめ商品はご覧いただけます。") + " (" + (window.petMealI18n?.translate(detail) || detail) + ")";
       }
     } finally { if (current === sequence) setBusy(false); }
   }

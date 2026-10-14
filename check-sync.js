@@ -4,7 +4,7 @@
   const pet = document.body.dataset.pet;
   const localKey = document.body.dataset.localKey || `pet-meal-check-${pet}-v1`;
   const english = document.documentElement.lang === 'en';
-  const t = source => english ? (window.petMealEnglish?.[source] || source) : source;
+  const t = source => window.petMealI18n ? window.petMealI18n.translate(source) : english ? (window.petMealEnglish?.[source] || source) : source;
   const sharedKey = `pet-meal-sharing-${pet}-v1`;
   const authKey = 'pet-meal-anonymous-v1';
   const apiKey = 'AIzaSyCN-5oQo9Aj3bWVawIZyx-r8rYF3zimLhk';
@@ -140,7 +140,7 @@
   ids.forEach((id, index) => {
     const b = document.createElement('button');
     b.className = `tap ${index % 2 ? 'n' : 'm'} r${Math.floor(index / 2)}`;
-    b.setAttribute('aria-label', english
+    b.setAttribute('aria-label', window.petMealI18n ? window.petMealI18n.cellLabel(index) : english
       ? `${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][Math.floor(index / 2)]} ${index % 2 ? 'night' : 'morning'}`
       : `${'月火水木金土日'[Math.floor(index / 2)]}曜日の${index % 2 ? '夜' : '朝'}`);
     b.onclick = () => change({[id]: shared ? !current()[id].value : !local[id]});
@@ -257,7 +257,7 @@
   document.getElementById('invite').onclick = async () => {
     const url = inviteURL();
     try {
-      if (navigator.share) await navigator.share({title: english ? `Fed Yet? ${pet === 'cat' ? 'Cat' : 'Dog'} chart` : `ごはんあげた？ ${pet === 'cat' ? '猫' : '犬'}の共有`, url});
+      if (navigator.share) await navigator.share({title: t('ごはんあげた？') + ' ' + t(pet === 'cat' ? '猫の共有' : '犬の共有'), url});
       else { await navigator.clipboard.writeText(url); alert(t('招待リンクをコピーしたよ。家族に送ってね。')); }
     } catch (error) { if (error.name !== 'AbortError') prompt(t('この招待リンクをコピーしてね'), url); }
   };
@@ -275,7 +275,7 @@
   async function acceptInvite(token, ask = true) {
     if (shared?.token === token) return;
     if (shared?.queue.length) { alert(t('先に、今の共有待ちの操作を送信してね。')); return; }
-    if (ask && !confirm(english ? `Join this shared ${pet} chart? It will be shown instead of your local chart.` : `${pet === 'cat' ? '猫' : '犬'}の共有表に参加しますか？ この端末のチェックとは別の表を表示します。`)) return;
+    if (ask && !confirm(t(`${pet === 'cat' ? '猫' : '犬'}の共有表に参加しますか？ この端末のチェックとは別の表を表示します。`))) return;
     await connect(async () => {
       const user = await identity();
       const response = await db(`invites/${token}`);
@@ -318,6 +318,11 @@
       render();
       void sync();
     }
+  });
+  window.addEventListener('pet-meal-languagechange', () => {
+    ids.forEach((id,index) => buttons[id].setAttribute('aria-label',window.petMealI18n.cellLabel(index)));
+    message = t(message);
+    render();
   });
   render();
   const resumeInstall = () => {

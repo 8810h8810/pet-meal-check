@@ -1,0 +1,19 @@
+.language-settings{max-width:520px;margin:10px auto 18px;padding:0 16px;display:flex;justify-content:center;align-items:center;gap:10px;font:14px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;color:#342e29;flex-wrap:wrap}
+.language-settings select{min-height:44px;max-width:100%;padding:8px 12px;border:1px solid #b9aa98;border-radius:10px;background:#fffaf2;color:#342e29;font:inherit}
+.language-settings a{color:inherit}.sharing button{overflow-wrap:anywhere;max-width:100%}
+/* Tap geometry follows the original artwork, independent of the URL/local record key. */
+.sheet[data-chart-artwork=ja]{aspect-ratio:3/4.5}
+.sheet[data-chart-artwork=international]{aspect-ratio:843/1264}
+.sheet[data-chart-artwork=ja] .tap{width:41%;height:7.1%}
+.sheet[data-chart-artwork=ja] .m{left:18%}.sheet[data-chart-artwork=ja] .n{left:59%}
+.sheet[data-chart-artwork=international] .tap{width:39%;height:6.55%}
+.sheet[data-chart-artwork=international] .m{left:18.2%}.sheet[data-chart-artwork=international] .n{left:57.2%}
+.sheet[data-chart-artwork=ja] .reset{height:12%}
+.sheet[data-chart-artwork=international] .reset{height:13.5%}
+.sheet[data-chart-artwork=ja] .r0{top:33.8%}.sheet[data-chart-artwork=international] .r0{top:35.2%}
+.sheet[data-chart-artwork=ja] .r1{top:40.7%}.sheet[data-chart-artwork=international] .r1{top:42.0%}
+.sheet[data-chart-artwork=ja] .r2{top:47.6%}.sheet[data-chart-artwork=international] .r2{top:48.8%}
+.sheet[data-chart-artwork=ja] .r3{top:54.5%}.sheet[data-chart-artwork=international] .r3{top:55.6%}
+.sheet[data-chart-artwork=ja] .r4{top:61.4%}.sheet[data-chart-artwork=international] .r4{top:62.4%}
+.sheet[data-chart-artwork=ja] .r5{top:68.3%}.sheet[data-chart-artwork=international] .r5{top:69.2%}
+.sheet[data-chart-artwork=ja] .r6{top:75.2%}.sheet[data-chart-artwork=international] .r6{top:76.0%}
