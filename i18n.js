@@ -3,7 +3,6 @@
   'use strict';
   const languages = ['ja', 'en', 'es', 'nl'];
   const key = 'pet-meal-language-v1';
-  const originalLanguage = document.documentElement.lang;
   const index = new Map();
   for (const row of window.petMealTranslations) {
     row.forEach(value => index.set(value, row));
@@ -67,31 +66,21 @@
     const day = words.full[Math.floor(i / 2)], time = i % 2 ? words.night : words.morning;
     return language === 'ja' ? `${day}の${time}` : `${day} · ${time}`;
   }
-  let overlay;
+  const chartAssets = {
+    dog: {ja:'IMG_9853.jpeg', en:'en/dog/いぬあぷり海外版.JPG', es:'assets/dog-es-v3.png', nl:'assets/dog-nl-v3.png'},
+    cat: {ja:'IMG_9860.jpeg', en:'en/cat/ねこアプリ海外版.JPG', es:'assets/cat-es-v3.png', nl:'assets/cat-nl-v3.png'}
+  };
   function renderChart() {
     const sheet = document.getElementById('sheet');
     if (!sheet) return;
-    const words = window.petMealChartWords[language];
+    const pet = document.body.dataset.pet;
     for (const [i, button] of [...sheet.querySelectorAll('.tap')].entries()) {
       button.setAttribute('aria-label',cellLabel(i));
     }
     document.getElementById('reset').setAttribute('aria-label',translateText('リセット'));
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.className = 'chart-translation'; overlay.setAttribute('aria-hidden','true');
-      overlay.setAttribute('data-no-translate','');
-      for (const cls of ['chart-title','chart-day','chart-morning','chart-night','chart-reset',...words.days.map((_,i)=>`chart-weekday chart-weekday-${i}`)]) {
-        const label = document.createElement('span'); label.className=cls; overlay.appendChild(label);
-      }
-      sheet.appendChild(overlay);
-    }
-    overlay.hidden = language === originalLanguage;
-    overlay.querySelector('.chart-title').textContent = words.title;
-    overlay.querySelector('.chart-day').textContent = words.day;
-    overlay.querySelector('.chart-morning').textContent = words.morning;
-    overlay.querySelector('.chart-night').textContent = words.night;
-    overlay.querySelector('.chart-reset').textContent = translateText('リセット');
-    overlay.querySelectorAll('.chart-weekday').forEach((label,i)=>label.textContent=words.days[i]);
+    // One complete asset per language; records and controls stay in place.
+    sheet.setAttribute('data-chart-artwork', language === 'ja' ? 'ja' : 'international');
+    sheet.style.backgroundImage = `url("${new URL(chartAssets[pet][language], scriptURL).href}")`;
   }
   function refresh() {
     document.documentElement.lang = language;
