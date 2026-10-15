@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://8810h8810.github.io/pet-meal-check/sitemap.xml
