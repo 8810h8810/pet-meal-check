@@ -5,7 +5,7 @@ const cp = require('node:child_process');
 const path = require('node:path');
 const root=path.resolve(__dirname,'..');
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
-const baseline='backup-before-i18n-20261011';
+const baseline=process.env.BASELINE_REF || 'backup-before-i18n-20261011';
 class Element {
   constructor(tag='div') {this.nodeType=1;this.tagName=tag.toUpperCase();this.childNodes=[];this.attributes={};this.hidden=false;this.listeners={};this.style={};this.value='';this.classes=new Set();this.classList={toggle:(cls,on)=>on?this.classes.add(cls):this.classes.delete(cls)};}
   get parentElement(){return this.parentNode || null;}

@@ -3,6 +3,27 @@
   'use strict';
   const id = 'G-WY8E2J84VL';
   const key = 'pet-meal-analytics-consent-v1';
+  const internalKey = 'pet-meal-analytics-internal-v1';
+  const page = new URL(location.href);
+  const productionPaths = new Set([
+    '/pet-meal-check/', '/pet-meal-check/index.html',
+    '/pet-meal-check/cat/', '/pet-meal-check/cat/index.html',
+    '/pet-meal-check/en/dog/', '/pet-meal-check/en/dog/index.html',
+    '/pet-meal-check/en/cat/', '/pet-meal-check/en/cat/index.html'
+  ]);
+  const production = page.origin === 'https://8810h8810.github.io' && productionPaths.has(page.pathname);
+  // Separate from consent: opting back in to measurement never grants consent.
+  let internal = true;
+  function readInternal() {
+    try { return localStorage.getItem(internalKey) === '1'; }
+    catch (_) { return true; } // Storage uncertainty must not enable analytics.
+  }
+  try {
+    const option = page.searchParams.get('wm_internal');
+    if (option === '1') localStorage.setItem(internalKey, '1');
+    else if (option === '0') localStorage.removeItem(internalKey);
+    internal = readInternal();
+  } catch (_) { internal = true; }
   const ttl = 180 * 24 * 60 * 60 * 1000;
   const root = new URL('./', document.currentScript.src);
   const copy = {
@@ -21,6 +42,12 @@
     return 'unset';
   }
   let choice = read();
+  const excludedCopy = {
+    ja: 'このブラウザまたはURLは計測対象外です。解析は停止中です。',
+    en: 'This browser or URL is excluded from measurement. Analytics is off.',
+    es: 'Este navegador o URL está excluido de la medición. La analítica está desactivada.',
+    nl: 'Deze browser of URL is uitgesloten van metingen. Statistieken staan uit.'
+  };
   function language() {
     let value = window.petMealI18n?.language;
     if (!value) {
@@ -33,7 +60,7 @@
     try { const u = new URL(value); return u.origin + u.pathname; } catch (_) { return ''; }
   }
   function start() {
-    if (choice !== 'granted' || !document.body.dataset.pet) return;
+    if (choice !== 'granted' || internal || !production || !document.body.dataset.pet) return;
     window['ga-disable-' + id] = false;
     if (loaded) return;
     loaded = true;
@@ -77,6 +104,10 @@
     const words = language(); title.textContent=words[0]; message.textContent=words[1];
     allow.textContent=words[2]; decline.textContent=words[3]; policy.textContent=words[7];
     status.textContent=words[failed ? 8 : choice === 'granted' ? 5 : choice === 'denied' ? 6 : 4];
+    if (internal || (!production && document.body.dataset.pet)) {
+      const lang = Object.keys(copy).find(key => copy[key] === words) || 'en';
+      status.textContent += ' ' + excludedCopy[lang];
+    }
     allow.setAttribute('aria-pressed', String(choice === 'granted'));
     decline.setAttribute('aria-pressed', String(choice === 'denied'));
   }
@@ -96,12 +127,13 @@
   decline.addEventListener('click', () => set('denied'));
   window.addEventListener('pet-meal-languagechange', render);
   window.addEventListener('storage', event => {
-    if (event.key !== key && event.key !== null) return;
+    if (event.key !== key && event.key !== internalKey && event.key !== null) return;
     choice=read();
-    if (choice !== 'granted') { window['ga-disable-' + id]=true; clearAnalyticsCookies(); if (loaded) location.reload(); }
+    internal=readInternal();
+    if (choice !== 'granted' || internal || !production) { window['ga-disable-' + id]=true; clearAnalyticsCookies(); if (loaded) location.reload(); }
     else start();
     render();
   });
   render();
-  if (choice === 'granted') start(); else clearAnalyticsCookies();
+  if (choice === 'granted' && !internal && production) start(); else clearAnalyticsCookies();
 })();
