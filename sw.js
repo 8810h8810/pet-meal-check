@@ -1,4 +1,4 @@
-const CACHE = 'pet-meal-pwa-v13-consent';
+const CACHE = 'pet-meal-pwa-v14-internal-exclusion';
 const ROOT = new URL('./', self.location.href);
 const ASSETS = [
   './analytics-consent.js', './analytics-consent.css',
