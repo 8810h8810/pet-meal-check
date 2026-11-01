@@ -1,8 +1,8 @@
 {
   "qaOnly": true,
-  "release": "a",
-  "sourceAnalyticsSha256": "6b6c8b30cb767abc272e38a835cbc2aaafecdf1d76cc346b4dceef2d579b920a",
-  "consentVersion": "v1",
+  "release": "b",
+  "sourceAnalyticsSha256": "f2ae7d772053bd48c2fbcebd8ce47d6a3dc715cb7aace9ffbca5b3c9f1653e4e",
+  "consentVersion": "v2",
   "assetCount": 36,
   "sourceEngine": "original local save/render/reset with fail-closed QA sharing adapter",
   "externalConnections": "blocked",
