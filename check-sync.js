@@ -117,10 +117,12 @@
   }
   function change(values) {
     try {
+      let savedCheck = false;
       if (shared) {
         const latest = read(sharedKey, null);
         if (latest?.room === shared.room) shared = latest;
         const cells = current();
+        savedCheck = Object.entries(values).some(([cell, value]) => value === true && cells[cell]?.value !== true);
         const ops = Object.entries(values).map(([cell, value]) => ({
           cell, value, id: random(), baseRev: cells[cell].rev, baseOp: cells[cell].op
         }));
@@ -128,12 +130,16 @@
         save(sharedKey, next); // Persist before showing a successful tap.
         shared = next;
       } else {
+        savedCheck = Object.entries(values).some(([cell, value]) => value === true && local[cell] !== true);
         const next = {...local, ...values};
         save(localKey, next);
         local = next;
       }
       message = '';
       render();
+      // A successful LOCAL save, not a click or confirmation of family sync.
+      // No record data or sharing identifiers cross this analytics boundary.
+      if (savedCheck) { try { window.petMealUsage?.recordStored(); } catch (_) {} }
       void sync();
     } catch (_) { alert(t('保存できませんでした。端末の空き容量やブラウザの設定を確認してね。')); }
   }

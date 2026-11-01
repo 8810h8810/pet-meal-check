@@ -41,12 +41,12 @@ function environment(file,deviceLanguage='ja',initial={},transport){
   docEl.lang=html.match(/<html lang="([^"]+)"/)[1];body.dataset={pet:html.match(/data-pet="([^"]+)"/)[1]};const localKey=html.match(/data-local-key="([^"]+)"/);if(localKey)body.dataset.localKey=localKey[1];
   const sheet=new Element();sheet.id='sheet';const reset=new Element('button');reset.id='reset';reset.textContent=docEl.lang==='en'?'Reset':'リセット';sheet.append(reset);body.append(sheet);
   const controls=new Element('section');controls.id='sharing';for(const [id,value] of [['sync-status','この端末だけに保存'],['start-sharing','家族と共有する'],['invite','家族を招待'],['join-sharing','招待リンクで参加'],['stop-sharing','この端末の共有をやめる']]){const el=new Element(id==='sync-status'?'p':'button');el.id=id;el.textContent=value;controls.append(el);}body.append(controls);
-  const store=new Map(Object.entries(initial));const writes=[];let failSave=false;const events={};let confirms=[],alerts=[]; const intervals=[];
+  const store=new Map(Object.entries(initial));const writes=[];let failSave=false,confirmResult=false;const events={};let confirms=[],alerts=[]; const intervals=[];
   const document={body,head,documentElement:docEl,hidden:false,cookie:'',title:'ごはんあげた？',currentScript:{src:'https://example.test/pet-meal-check/i18n.js'},getElementById:id=>body.querySelector('#'+id),querySelector:s=>body.querySelector(s),addEventListener:()=>{},createElement:tag=>{const el=new Element(tag);if(tag==='template'){el.content=new Element('fragment');Object.defineProperty(el,'innerHTML',{set:html=>parse(html,el.content),get:()=>el.content.innerHTML});}return el;}};
   const window={addEventListener:(name,fn)=>(events[name]??=[]).push(fn),dispatchEvent:event=>(events[event.type]||[]).forEach(fn=>fn(event)),matchMedia:()=>({matches:false})};
-  const sandbox={window,document,navigator:{language:deviceLanguage,languages:[deviceLanguage],onLine:!!transport},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>{if(failSave)throw Error('quota');store.set(k,v);writes.push(k);},removeItem:k=>store.delete(k)},MutationObserver:class{constructor(fn){this.fn=fn;}observe(){}},Event:class{constructor(type){this.type=type;}},URL,URLSearchParams,AbortController,location:{pathname:'/pet-meal-check/',origin:'https://example.test'},crypto:require('node:crypto').webcrypto,structuredClone,setInterval:fn=>intervals.push(fn),setTimeout:()=>{},clearTimeout:()=>{},alert:v=>alerts.push(v),confirm:v=>{confirms.push(v);return false;},fetch:transport||(()=>{throw Error('Unexpected network request');}),console};
+  const sandbox={window,document,navigator:{language:deviceLanguage,languages:[deviceLanguage],onLine:!!transport},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>{if(failSave)throw Error('quota');store.set(k,v);writes.push(k);},removeItem:k=>store.delete(k)},MutationObserver:class{constructor(fn){this.fn=fn;}observe(){}},Event:class{constructor(type){this.type=type;}},URL,URLSearchParams,AbortController,location:{pathname:'/pet-meal-check/',origin:'https://example.test'},crypto:require('node:crypto').webcrypto,structuredClone,setInterval:fn=>intervals.push(fn),setTimeout:()=>{},clearTimeout:()=>{},alert:v=>alerts.push(v),confirm:v=>{confirms.push(v);return confirmResult;},fetch:transport||(()=>{throw Error('Unexpected network request');}),console};
   vm.createContext(sandbox);for(const f of ['i18n-data.js','i18n-pages.js','i18n.js','check-sync.js'])vm.runInContext(read(f),sandbox,{filename:f});
-  return {window,document,store,writes,confirms,alerts,navigator:sandbox.navigator,events,poll:()=>intervals.forEach(fn=>fn()),setFail:v=>failSave=v};
+  return {window,document,store,writes,confirms,alerts,navigator:sandbox.navigator,events,poll:()=>intervals.forEach(fn=>fn()),setFail:v=>failSave=v,setConfirm:v=>confirmResult=v};
 }
 
 const room='a'.repeat(64), token='b'.repeat(64);
@@ -119,6 +119,42 @@ async function test(name,fn){await fn();count++;console.log('PASS '+name);}
     const s=server(),a=client(s);await settle();s.fail=true;taps(a)[3].onclick();await settle();
     assert.equal(shared(a).queue.length,1);assert.ok(pressed(a,3));a.window.petMealI18n.setLanguage('en');assert.equal(shared(a).queue.length,1);
     s.fail=false;a.poll();await settle();assert.equal(shared(a).queue.length,0);assert.equal(s.cells['1-1'].value,true);assert.equal(shared(a).room,room);
+  });
+  await test('all four routes call no-argument usage hook only after durable positive saves',async()=>{
+    for(const route of ['index.html','cat/index.html','en/dog/index.html','en/cat/index.html']) {
+      const a=environment(route),calls=[];const pet=route.includes('cat')?'cat':'dog';const key=route.startsWith('en/')?`pet-meal-check-${pet}-en-v2`:`pet-meal-check-${pet}-v1`;
+      a.window.petMealUsage={recordStored:(...args)=>{assert.equal(JSON.parse(a.store.get(key))['0-0'],true);calls.push(args);}};
+      taps(a)[0].onclick();assert.equal(calls.length,1);assert.deepEqual(calls[0],[]);assert.ok(pressed(a,0));
+      taps(a)[0].onclick();assert.equal(calls.length,1);a.setConfirm(true);a.document.getElementById('reset').onclick();assert.equal(calls.length,1);
+    }
+  });
+  await test('failed local or shared queue save never calls completion hook',async()=>{
+    for(const a of [environment('index.html'),client(server())]) {
+      await settle();let calls=0;a.window.petMealUsage={recordStored:()=>calls++};a.setFail(true);taps(a)[0].onclick();
+      assert.equal(calls,0);assert.equal(pressed(a,0),false);assert.equal(a.alerts.length,1);
+    }
+  });
+  await test('offline shared save calls once; ACK, poll and remote client rendering call zero',async()=>{
+    const s=server(),a=client(s),b=client(s,'index.html','en','two');await settle();let aCalls=0,bCalls=0;
+    a.window.petMealUsage={recordStored:(...args)=>{assert.equal(shared(a).queue.length,1);assert.deepEqual(args,[]);aCalls++;}};
+    b.window.petMealUsage={recordStored:()=>bCalls++};a.navigator.onLine=false;taps(a)[0].onclick();assert.equal(aCalls,1);assert.equal(shared(a).queue.length,1);
+    a.navigator.onLine=true;a.poll();await settle();b.poll();await settle();a.poll();await settle();
+    assert.equal(aCalls,1);assert.equal(bCalls,0);assert.equal(shared(a).queue.length,0);assert.ok(pressed(b,0));
+  });
+  await test('latest shared state true->true is not a new positive record',async()=>{
+    const s=server(),a=client(s);await settle();a.navigator.onLine=false;let calls=0;a.window.petMealUsage={recordStored:()=>calls++};
+    const latest=shared(a);latest.cells['0-0'].value=true;latest.cells['0-0'].rev=1;latest.cells['0-0'].op='newer-fixture';a.store.set('pet-meal-sharing-dog-v1',JSON.stringify(latest));
+    taps(a)[0].onclick();assert.equal(calls,0);assert.ok(pressed(a,0));
+  });
+  await test('throwing or absent hook never changes successful local/shared behavior',async()=>{
+    for(const a of [environment('index.html'),client(server())]) {
+      await settle();a.window.petMealUsage={recordStored:()=>{throw Error('mock analytics');}};taps(a)[0].onclick();await settle();assert.ok(pressed(a,0));assert.equal(a.alerts.length,0);
+      delete a.window.petMealUsage;taps(a)[1].onclick();await settle();assert.ok(pressed(a,1));assert.equal(a.alerts.length,0);
+    }
+  });
+  await test('no usage hook on restore, reset, language changes or storage refresh',async()=>{
+    const a=environment('index.html','ja',{'pet-meal-check-dog-v1':JSON.stringify({'0-0':true})});let calls=0;a.window.petMealUsage={recordStored:()=>calls++};
+    a.window.petMealI18n.setLanguage('en');a.events.storage.forEach(fn=>fn({key:'pet-meal-check-dog-v1'}));a.setConfirm(true);a.document.getElementById('reset').onclick();assert.equal(calls,0);assert.equal(pressed(a,0),false);
   });
   console.log(`${count} shared-sync tests passed (two DOM clients and simulated Firebase transport; no live Firebase or iPhone verification).`);
 })().catch(error=>{console.error(error);process.exitCode=1;});
