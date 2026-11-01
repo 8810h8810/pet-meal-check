@@ -1,7 +1,7 @@
 {
-  "id": "./",
-  "name": "Cat Feeding Check",
-  "short_name": "Fed?",
+  "id": "./qa-dummy-app",
+  "name": "QA Dummy · Cat Feeding Check",
+  "short_name": "QA Dummy",
   "lang": "en",
   "start_url": "./",
   "scope": "./",
@@ -15,5 +15,6 @@
       "type": "image/jpeg",
       "purpose": "any"
     }
-  ]
+  ],
+  "description": "Non-production local dummy checks; no sharing or external telemetry."
 }

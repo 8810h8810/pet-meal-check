@@ -1,0 +1,81 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; media-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'self'; worker-src 'self'; frame-ancestors 'none'
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+/index.html
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/cat/index.html
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/cat/
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/en/dog/index.html
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/en/dog/
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/en/cat/index.html
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/en/cat/
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/privacy/index.html
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/privacy/
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/en/privacy/index.html
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/en/privacy/
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/about/index.html
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/about/
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/qa-fixture.html
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/qa-fixture
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store
+
+/sw.js
+  Content-Security-Policy: connect-src 'self'
+  Cache-Control: no-cache
+
+/qa-config.js
+  Cache-Control: no-store
+
+/404.html
+  Content-Security-Policy: connect-src 'none'
+  Cache-Control: no-store

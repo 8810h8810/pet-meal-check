@@ -1,14 +1,15 @@
+/* QA ADAPTER: original local save/render/reset/hook preserved; all sharing and network disabled. */
 /* Shared by the dog and cat pages. Local mode makes no Firebase requests. */
 (() => {
   'use strict';
   const pet = document.body.dataset.pet;
-  const localKey = document.body.dataset.localKey || `pet-meal-check-${pet}-v1`;
+  const localKey = 'pet-meal-qa:' + (document.body.dataset.localKey || `pet-meal-check-${pet}-v1`);
   const english = document.documentElement.lang === 'en';
   const t = source => window.petMealI18n ? window.petMealI18n.translate(source) : english ? (window.petMealEnglish?.[source] || source) : source;
-  const sharedKey = `pet-meal-sharing-${pet}-v1`;
-  const authKey = 'pet-meal-anonymous-v1';
-  const apiKey = 'AIzaSyCN-5oQo9Aj3bWVawIZyx-r8rYF3zimLhk';
-  const database = 'https://pet-meal-check-default-rtdb.asia-southeast1.firebasedatabase.app';
+  const sharedKey = `pet-meal-qa-sharing-disabled:${pet}`;
+  const authKey = 'pet-meal-qa-auth-disabled';
+  const apiKey = 'QA_DISABLED_NO_API_KEY';
+  const database = 'qa-disabled://no-network';
   const ids = Array.from({length: 14}, (_, i) => `${Math.floor(i / 2)}-${i % 2}`);
   const sheet = document.getElementById('sheet');
   const status = document.getElementById('sync-status');
@@ -22,18 +23,18 @@
   const random = () => Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
   const empty = () => Object.fromEntries(ids.map(id => [id, {value: false, rev: 0, op: 'initial'}]));
   let local = read(localKey, {});
-  let shared = read(sharedKey, null);
+  let shared = null; // QA: never restore a real or simulated shared chart.
   if (!shared || !/^[a-f0-9]{64}$/.test(shared.room) || !Array.isArray(shared.queue)) shared = null;
   let auth = read(authKey, null), authWork, busy = false, changing = false;
   let message = '';
   const installed = navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
   // iOS copies cookies once when a NEW Home Screen app is added.
   // Transfer only an invitation, never credentials or offline operations.
-  const installCookie = `pet-meal-install-${pet}`;
+  const installCookie = `pet-meal-qa-install-disabled-${pet}`;
   const cookiePath = location.pathname.replace(/index\.html$/, '');
   const cookieToken = () => document.cookie.split(';').map(s => s.trim()).find(s => s.startsWith(`${installCookie}=`))?.slice(installCookie.length + 1);
   const clearInstallCookie = () => { document.cookie = `${installCookie}=; Path=${cookiePath}; Max-Age=0; SameSite=Strict; Secure`; };
-  let installToken = installed && /^[a-f0-9]{64}$/.test(cookieToken()) ? cookieToken() : null;
+  let installToken = null; // QA: invitations are never resumed.
   if (installed && shared) { clearInstallCookie(); installToken = null; }
   const helpStyle = document.createElement('style');
   helpStyle.textContent = '.share-guide{box-sizing:border-box;width:calc(100% - 32px);max-width:440px;max-height:90dvh;overflow:auto;border:1px solid #b9aa98;border-radius:18px;padding:24px;background:#fffaf2;color:#342e29;font:17px/1.7 -apple-system,BlinkMacSystemFont,sans-serif;touch-action:manipulation}.share-guide::backdrop{background:#0008}.share-guide h2{font-size:22px;line-height:1.4;margin:0 0 16px}.share-guide p{margin:12px 0}.share-guide ol{padding-left:26px}.share-guide li{margin:14px 0}.share-guide button{display:block;width:100%;min-height:48px;padding:12px;margin:12px 0 0;font:inherit;font-weight:600;border:1px solid #b9aa98;border-radius:10px;background:#f7efe2;color:#342e29;touch-action:manipulation}.share-guide .primary{background:#584936;color:white}.share-guide textarea{box-sizing:border-box;width:100%;min-height:100px;margin-top:8px;border:1px solid #b9aa98;border-radius:8px;padding:12px;font:16px/1.5 sans-serif}.share-guide .guide-note{font-size:14px}.share-guide [hidden]{display:none}';
@@ -111,16 +112,18 @@
     document.getElementById('invite').hidden = !shared;
     document.getElementById('stop-sharing').hidden = !shared;
     homeButton.hidden = installed || !shared;
-    for (const button of controls.querySelectorAll('button')) button.disabled = changing;
-    status.textContent = changing ? t('接続しています…') : message || (shared
-      ? (shared.queue.length ? t('端末に保存済み・共有待ち') : t('家族と共有中')) : t('この端末だけに保存'));
+    for (const button of controls.querySelectorAll('button')) { if (button.id === 'app-update') { button.disabled = false; continue; } button.disabled = true; button.setAttribute('aria-disabled','true'); button.title = 'QA: family sharing disabled'; }
+    status.textContent = 'QA DUMMY — NO SHARING / NO EXTERNAL CONNECTIONS · ' + (changing ? t('接続しています…') : message || (shared
+      ? (shared.queue.length ? t('端末に保存済み・共有待ち') : t('家族と共有中')) : t('この端末だけに保存')));
   }
   function change(values) {
     try {
+      let savedCheck = false;
       if (shared) {
         const latest = read(sharedKey, null);
         if (latest?.room === shared.room) shared = latest;
         const cells = current();
+        savedCheck = Object.entries(values).some(([cell, value]) => value === true && cells[cell]?.value !== true);
         const ops = Object.entries(values).map(([cell, value]) => ({
           cell, value, id: random(), baseRev: cells[cell].rev, baseOp: cells[cell].op
         }));
@@ -128,12 +131,16 @@
         save(sharedKey, next); // Persist before showing a successful tap.
         shared = next;
       } else {
+        savedCheck = Object.entries(values).some(([cell, value]) => value === true && local[cell] !== true);
         const next = {...local, ...values};
         save(localKey, next);
         local = next;
       }
       message = '';
       render();
+      // A successful LOCAL save, not a click or confirmation of family sync.
+      // No record data or sharing identifiers cross this analytics boundary.
+      if (savedCheck) { try { window.petMealUsage?.recordStored(); } catch (_) {} }
       void sync();
     } catch (_) { alert(t('保存できませんでした。端末の空き容量やブラウザの設定を確認してね。')); }
   }
@@ -152,19 +159,14 @@
       change(Object.fromEntries(ids.map(id => [id, false])));
     }
   };
-  async function request(url, options = {}) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
-    try { return await fetch(url, {...options, signal: controller.signal, cache: 'no-store', referrerPolicy: 'no-referrer'}); }
-    finally { clearTimeout(timer); }
-  }
+  async function request() { throw new Error('QA_NETWORK_DISABLED'); }
   async function identity() {
     if (auth && auth.expires > Date.now() + 60000) return auth;
     if (authWork) return authWork;
     authWork = (async () => {
       const refreshing = !!auth?.refresh;
-      const url = refreshing ? `https://securetoken.googleapis.com/v1/token?key=${apiKey}`
-        : `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`;
+      const url = refreshing ? `qa-disabled://identity-refresh?key=${apiKey}`
+        : `qa-disabled://identity-signup?key=${apiKey}`;
       const response = await request(url, {
         method: 'POST', headers: {'Content-Type': refreshing ? 'application/x-www-form-urlencoded' : 'application/json'},
         body: refreshing ? new URLSearchParams({grant_type: 'refresh_token', refresh_token: auth.refresh}).toString()
@@ -234,6 +236,7 @@
     } finally { busy = false; }
   }
   async function connect(action) {
+    throw new Error('QA_SHARING_DISABLED'); // fail closed before identity or writes
     if (busy || changing) return;
     if (!navigator.onLine) { alert(t('共有を始めるときはインターネット接続が必要だよ。')); return; }
     changing = true; render();
@@ -313,7 +316,7 @@
   window.addEventListener('storage', event => {
     if (event.key === sharedKey || event.key === localKey) {
       // Another open copy of this sheet may have just queued a tap.
-      shared = read(sharedKey, null);
+      shared = null; // QA: storage events never restore sharing.
       local = read(localKey, {});
       render();
       void sync();

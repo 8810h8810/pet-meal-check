@@ -1,9 +1,16 @@
-/* One shared offline worker for the dog and cat pages. */
-if ('serviceWorker' in navigator) {
-  const scriptURL = new URL(document.currentScript.src);
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register(new URL('sw.js', scriptURL), {
-      scope: new URL('./', scriptURL).pathname
-    }).catch(error => console.warn('オフライン準備に失敗しました', error));
+/* QA ONLY: same-origin service worker; production hosts are refused. */
+(() => {
+  const script=new URL(document.currentScript.src);
+  if (location.hostname === '8810h8810.github.io') return;
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load',async()=>{
+    try {
+      const registration=await navigator.serviceWorker.register(new URL('sw.js',script),{scope:new URL('./',script).pathname,updateViaCache:'none'});
+      window.dispatchEvent(new Event('qa-status-change'));
+      registration.addEventListener('updatefound',()=>{
+        window.dispatchEvent(new Event('qa-status-change'));
+        registration.installing?.addEventListener('statechange',()=>window.dispatchEvent(new Event('qa-status-change')));
+      });
+    } catch(error) {window.petMealQARegistrationError=String(error);window.dispatchEvent(new Event('qa-status-change'));}
   });
-}
+})();

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>プライバシーポリシー｜ごはんあげた？</title>
+<html lang="ja"><head><meta http-equiv="Content-Security-Policy" content="default-src &#x27;self&#x27;; script-src &#x27;self&#x27;; style-src &#x27;self&#x27; &#x27;unsafe-inline&#x27;; img-src &#x27;self&#x27; data:; font-src &#x27;self&#x27;; media-src &#x27;none&#x27;; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; form-action &#x27;none&#x27;; base-uri &#x27;self&#x27;; worker-src &#x27;self&#x27;; frame-ancestors &#x27;none&#x27;; connect-src &#x27;none&#x27;"><meta charset="utf-8"><meta name="robots" content="noindex,nofollow,noarchive"><link rel="stylesheet" href="../qa-ui.css"><script src="../qa-config.js" defer></script><script src="../qa-ui.js" defer></script><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>[QA A] プライバシーポリシー｜ごはんあげた？</title>
 <meta name="description" content="「ごはんあげた？」のプライバシーポリシーです。">
 <style>*{box-sizing:border-box}body{margin:0;background:#eee3fa;color:#342e29;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;line-height:1.85}.wrap{max-width:680px;margin:auto;padding:34px 20px 60px}h1{font-size:28px;color:#38204f;margin:0 0 22px}h2{font-size:19px;margin:28px 0 8px}.card{background:rgba(255,250,242,.92);border:1px solid #ddcce8;border-radius:18px;padding:22px}p{margin:8px 0}a{color:#513c70}.back{display:inline-block;margin-top:24px;text-decoration:none;font-weight:700}</style><link rel="stylesheet" href="../i18n.css"><script src="../i18n-data.js" defer></script><script src="../i18n-pages.js" defer></script><script src="../i18n.js" defer></script><link rel="stylesheet" href="../analytics-consent.css"><script src="../analytics-consent.js" defer></script></head>
-<body><main class="wrap"><div class="card">
+<body><aside class="qa-banner" data-no-translate><strong>QA 見本 · Release A</strong>旧v1同意の見本。次のB版で再同意を確認します。ダミー記録だけ。本番の記録・共有・Google Analytics・商品通信は行いません。<br><a href="../qa-fixture">分離した模擬計測テストを開く</a></aside><main class="wrap"><div class="card">
 <h1>プライバシーポリシー</h1>
 <p>「ごはんあげた？」（以下「当サイト」）では、利用者が安心して使えるよう、データの取り扱いについて以下のとおり定めます。</p>
 <h2>ごはんチェックの保存</h2>
@@ -16,18 +16,23 @@
 <h2>個人情報について</h2>
 <p>現在、当サイトには氏名、メールアドレス、住所などを入力して会員登録する機能はありません。</p>
 <h2>アクセス解析について</h2>
-<p>Google Analyticsは、このブラウザで解析を許可した場合だけ読み込みます。Cookieと接続・利用情報がGoogleに送られます。拒否しても記録・家族共有は使えます。選択は180日間保存し、画面下のアクセス解析設定で変更できます。停止時は解析を無効化して既存の解析Cookieを削除し、読み込み済みの場合は画面を再読み込みします。招待情報・記録内容は解析に送信せず、計測するURLからクエリと断片を除きます。</p>
+<p>Google Analyticsは、このブラウザで今回の解析内容を確認して改めて許可した場合だけ読み込みます。以前の版での許可は自動では引き継ぎません。選択は180日間保存し、画面下のアクセス解析設定でいつでも変更できます。</p>
+<p>未チェックのマスをチェックして端末への保存に成功したこと（record_saved）を、ページを開くたびに最初の1回だけ集計します。このブラウザで以前の日にも保存し、別の日にページを開いて保存した場合は、後日の再訪保存（record_return_saved）も集計します。追加の分類は犬版・猫版だけです。これはブラウザでの利用状況であり、人数や給餌回数、家族全員への同期完了を表すものではありません。</p>
+<p>チェックの内容、曜日・朝夜、健康情報、ペット名、会話本文、招待リンク、共有表ID、Firebaseの利用者ID、認証トークンは解析へ送りません。新しいイベントに独自の利用者IDや記録日時を付けません。</p>
+<p>後日の再訪を判定するため、犬版・猫版ごとに、許可後に最後に保存できた暦日だけをこのブラウザ内に保存します。この日付は最大180日、かつ同意が有効な間だけ判定に使い、期限切れは次回の確認時に削除します。解析を停止した場合も削除します。日付自体は解析へ送らず、同意前の記録を調べたり後から送ったりしません。</p>
+<p>Google Analytics自体はCookieの仮名IDや接続情報、通常の受信時刻なども扱うため、完全に匿名の計測ではありません。解析を停止すると解析を無効化し、既存の解析Cookieと再訪判定用の日付を削除し、タグを読み込み済みの場合はページを再読み込みします。拒否しても記録・家族共有は使えます。</p>
+<p>計測するURLからクエリと断片を除きます。公開キャンペーンの流入元・媒体・名称は、事前登録した固定の組合せと完全に一致する場合だけ、URLとは別の分類情報として送ることがあります。任意の入力値や個人別の識別情報は許可しません。現在、対象のキャンペーン組合せは登録していません。</p>
 <h2>ホーム画面への引き継ぎCookie</h2>
 <p>「参加してホーム画面に追加する」を選ぶと、招待情報を最大24時間Cookieに保存します。新しく追加するアプリへの共有表の引き継ぎに使用し、参加後に削除します。認証トークンや操作履歴は含みません。追加済みのアプリでは招待リンクの貼り付けが必要な場合があります。</p>
 <h2>広告について</h2>
 <p>当サイトでは、今後 Google AdSense を利用して広告を掲載する場合があります。Google などの第三者配信事業者は、Cookie を使用して、利用者が当サイトや他のウェブサイトへ過去にアクセスした際の情報に基づいて広告を配信することがあります。</p>
 <p>Google が広告 Cookie を使用することにより、Google およびそのパートナーが利用者のアクセス情報に基づいて広告を表示できる場合があります。利用者は Google の広告設定から、パーソナライズド広告を無効にできます。</p>
 <p>広告配信に伴い、第三者がブラウザに Cookie を保存・参照したり、ウェブビーコンや IP アドレスなどを使用して情報を収集したりする場合があります。</p>
-<p><a href="https://policies.google.com/technologies/partner-sites" rel="noopener" target="_blank">Google がパートナーのサイトやアプリを使用する際のデータ利用について</a></p>
-<p><a href="https://adssettings.google.com/" rel="noopener" target="_blank">Google 広告設定</a></p>
+<p><a rel="noopener" aria-disabled="true" tabindex="-1">Google がパートナーのサイトやアプリを使用する際のデータ利用について</a></p>
+<p><a rel="noopener" aria-disabled="true" tabindex="-1">Google 広告設定</a></p>
 <h2>Cookieについて</h2>
 <p>広告サービスを導入した場合、広告の配信、測定、不正利用防止などのために Cookie 等が利用されることがあります。広告サービスを導入する際は、適用される法令およびサービス提供者のポリシーに従って必要な対応を行います。</p>
 <h2>変更について</h2>
 <p>機能や利用サービスの変更に合わせ、このプライバシーポリシーを更新することがあります。</p>
-<p>制定日：2026年9月28日／更新日：2026年10月1日</p>
+<p>制定日：2026年9月28日／改訂案：2026年11月1日（未公開）</p>
 </div><a class="back" href="../about/">← 「ごはんあげた？」について戻る</a></main></body></html>
