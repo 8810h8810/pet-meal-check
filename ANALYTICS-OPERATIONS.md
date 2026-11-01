@@ -29,7 +29,7 @@ The original 30 cases remain, with consent-v2 fixture updates. The four unit/mod
 
 ## Verification completed separately
 
-An isolated public QA branch, never to be merged into main, exercised the old exact v1 analytics source and this exact v2 source with deliberately disabled external integrations. Real cloud Chromium A-to-B service-worker update retained dummy records, rejected old permission, and populated the new 36-asset QA cache. Refusal/withdrawal, reset cancellation/confirmation and dog/cat separation were checked. A separate browser simulation passed 14 cases. These findings do not establish real Firebase sharing, live GA delivery or production-cache behavior on iPhone.
+An isolated public QA branch, never to be merged into main, exercised the old exact v1 analytics source and the then-current v2 candidate with deliberately disabled external integrations. Real cloud Chromium A-to-B service-worker update retained dummy records, rejected old permission, and populated the new 36-asset QA cache. Refusal/withdrawal, reset cancellation/confirmation and dog/cat separation were checked. A separate browser simulation passed 14 cases. A later review fix keeps the local last-save date current after subsequent successful saves in a long-open document while still emitting at most once; its regression test brings the local total to 67. That small history-maintenance fix was not rerun through the public browser fixture. These findings do not establish real Firebase sharing, live GA delivery or production-cache behavior on iPhone.
 
 ## Remaining verification limits and operating rules
 

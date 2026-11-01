@@ -132,12 +132,15 @@
   window.petMealUsage = Object.freeze({recordStored() {
     // This no-argument hook must only follow a successful user false->true save.
     // It never reads feeding records, sharing state, Firebase IDs, or invite data.
-    if (!loaded || emitted || !usageStorageOK) return;
+    if (!loaded || !usageStorageOK) return;
     if (!canMeasure() || location.href !== page.origin + page.pathname) { window['ga-disable-' + id] = true; clearUsage(); clearAnalyticsCookies(); return; }
     const day = localDay(), now = ordinal(day);
     if (now === null || openedDay === null || now < openedDay) return;
     try { localStorage.setItem(usageKeys[appKind === 'cat' ? 1 : 0], JSON.stringify({lastSavedDay:day})); }
     catch (_) { return; }
+    // A long-open page still updates its last successful save day. Only event
+    // emission, not local history maintenance, is limited to once per document.
+    if (emitted) return;
     emitted = true;
     try {
       window.gtag('event', 'record_saved', {app_kind:appKind});

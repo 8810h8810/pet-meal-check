@@ -150,6 +150,20 @@ test('same-day reopens and an already-open tab crossing midnight are not later-d
   const b=app(JSON.stringify({choice:'granted',time:old}),'en',false,'dog',{now:old,store:{[dogHistory]:marker('2026-10-31')}});
   b.clock.now=fixedNow;b.window.petMealUsage.recordStored();assert.equal(metricEvents(b).length,1);
 });
+test('later successful saves in an open document refresh the local date without another event',()=>{
+  const a=app(fixedGrant,'en',false,'dog',{now:fixedNow});
+  a.window.petMealUsage.recordStored();assert.equal(metricEvents(a).length,1);
+  const tomorrow=fixedNow+86400000;a.clock.now=tomorrow;
+  a.window.petMealUsage.recordStored();a.window.petMealUsage.recordStored();
+  assert.equal(a.store.get(dogHistory),marker('2026-11-02'));
+  assert.equal(metricEvents(a).length,1);
+  const reopened=app(undefined,'en',false,'dog',{now:tomorrow,storeMap:a.store});
+  reopened.window.petMealUsage.recordStored();
+  assert.deepEqual(metricEvents(reopened).map(v=>v[1]),['record_saved']);
+  const nextDay=app(undefined,'en',false,'dog',{now:tomorrow+86400000,storeMap:a.store});
+  nextDay.window.petMealUsage.recordStored();
+  assert.deepEqual(metricEvents(nextDay).map(v=>v[1]),['record_saved','record_return_saved']);
+});
 test('corrupt, future and expired history is deleted when checked and never signals return',()=>{
   for(const raw of ['bad JSON',marker('2026-02-30'),marker('2026-11-02'),marker('2025-11-01')]) {
     const a=app(fixedGrant,'en',false,'dog',{now:fixedNow,store:{[dogHistory]:raw}});assert.equal(a.store.has(dogHistory),false);
