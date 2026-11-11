@@ -26,6 +26,11 @@
   if (!shared || !/^[a-f0-9]{64}$/.test(shared.room) || !Array.isArray(shared.queue)) shared = null;
   let auth = read(authKey, null), authWork, busy = false, changing = false;
   let message = '';
+  // Connection evidence belongs to this page session, never persisted data.
+  let syncState = 'unknown', confirmedRoom = null, connectionEpoch = 0;
+  function invalidateConnection() {
+    connectionEpoch++; syncState = 'unknown'; confirmedRoom = null;
+  }
   const installed = navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
   // iOS copies cookies once when a NEW Home Screen app is added.
   // Transfer only an invitation, never credentials or offline operations.
@@ -73,7 +78,7 @@
       alert(t('引き継ぎの準備ができませんでした。ホーム画面のアプリで招待リンクを貼り付けてね。'));
       homeGuide(token); return;
     }
-    const dialog = guide(t('<h2 id="guide-title">共有したままホーム画面に追加</h2><p>この共有表を、新しく追加するアプリへ引き継ぐ準備ができたよ。</p><ol><li><strong>この画面の共有ボタン（四角から上向き矢印）を押す</strong><br>見つからないときは、ブラウザのメニューを開いてね。</li><li><strong>「ホーム画面に追加」を選ぶ</strong><br>「Webアプリとして開く」が出たらオンのまま追加してね。</li><li><strong>追加したアイコンから開く</strong><br>ネットにつながった状態で「家族と共有中」と表示されるか確認してね。</li></ol><p class="guide-note">今日中に追加してね。すでにあるアイコンは自動では切り替わりません。引き継がれなければ招待リンクを一度貼り付けて参加できます。</p><button data-manual>追加済みのアプリで使う手順</button><button data-close>閉じる</button>'));
+    const dialog = guide(t('<h2 id="guide-title">共有したままホーム画面に追加</h2><p>この共有表を、新しく追加するアプリへ引き継ぐ準備ができたよ。</p><ol><li><strong>この画面の共有ボタン（四角から上向き矢印）を押す</strong><br>見つからないときは、ブラウザのメニューを開いてね。</li><li><strong>「ホーム画面に追加」を選ぶ</strong><br>「Webアプリとして開く」が出たらオンのまま追加してね。</li><li><strong>追加したアイコンから開く</strong><br>ネットにつながった状態で「前回の同期は完了・家族と共有」と表示されるか確認してね。</li></ol><p class="guide-note">今日中に追加してね。すでにあるアイコンは自動では切り替わりません。引き継がれなければ招待リンクを一度貼り付けて参加できます。</p><button data-manual>追加済みのアプリで使う手順</button><button data-close>閉じる</button>'));
     dialog.querySelector('[data-manual]').onclick = () => { dialog.close(); homeGuide(token); };
   }
   const homeButton = document.createElement('button');
@@ -112,8 +117,16 @@
     document.getElementById('stop-sharing').hidden = !shared;
     homeButton.hidden = installed || !shared;
     for (const button of controls.querySelectorAll('button')) button.disabled = changing;
-    status.textContent = changing ? t('接続しています…') : message || (shared
-      ? (shared.queue.length ? t('端末に保存済み・共有待ち') : t('家族と共有中')) : t('この端末だけに保存'));
+    let connection = 'この端末だけに保存';
+    if (shared) {
+      if (!navigator.onLine) connection = shared.queue.length ? 'オフライン・未送信の記録があります' : 'オフライン・端末の記録を表示中';
+      else if (shared.queue.length) connection = '端末に保存済み・共有待ち';
+      else if (syncState === 'checking') connection = '共有を確認中・端末の記録を表示中';
+      else if (syncState === 'error') connection = '共有に接続できません。端末の記録を表示中';
+      else if (syncState === 'synced' && confirmedRoom === shared.room) connection = '前回の同期は完了・家族と共有';
+      else connection = '共有の接続は未確認・端末の記録を表示中';
+    }
+    status.textContent = changing ? t('接続しています…') : t(connection) + (message ? ' / ' + message : '');
   }
   function change(values) {
     try {
@@ -197,9 +210,11 @@
     if (!response.ok) throw new Error('permission');
   }
   async function sync() {
-    if (!shared || busy || changing || !navigator.onLine || document.hidden) return;
-    busy = true;
+    if (!shared || busy || changing) return;
+    if (!navigator.onLine || document.hidden) { syncState = 'unknown'; confirmedRoom = null; render(); return; }
+    busy = true; syncState = 'checking'; render();
     const session = shared;
+    const epoch = connectionEpoch;
     const pending = [...session.queue];
     try {
       for (let attempt = 0; attempt < 4; attempt++) {
@@ -227,6 +242,8 @@
         const updated = {...session, cells: next, queue: session.queue.filter(op => !sent.has(op.id))};
         save(sharedKey, updated);
         shared = updated;
+        const fresh = epoch === connectionEpoch && navigator.onLine && !document.hidden;
+        syncState = fresh ? 'synced' : 'unknown'; confirmedRoom = fresh ? shared.room : null;
         message = conflict ? t('同じマスの変更が重なったため、先に共有された記録を残しました') : '';
         render();
         return;
@@ -234,15 +251,15 @@
       throw new Error('retry');
     } catch (_) {
       if (shared === session) {
-        message = session.queue.length ? t('端末に保存済み・接続できたら共有します') : t('共有に接続できません。端末の記録を表示中');
+        syncState = epoch === connectionEpoch ? 'error' : 'unknown'; confirmedRoom = null; message = ''; 
         render();
       }
-    } finally { busy = false; }
+    } finally { busy = false; if (syncState === 'checking') syncState = 'unknown'; render(); }
   }
   async function connect(action) {
     if (busy || changing) return;
     if (!navigator.onLine) { alert(t('共有を始めるときはインターネット接続が必要だよ。')); return; }
-    changing = true; render();
+    changing = true; syncState = 'unknown'; confirmedRoom = null; render();
     try { await action(); message = ''; }
     catch (_) { alert(t('共有に接続できませんでした。通信状態とFirebaseのルールを確認してね。')); }
     finally { changing = false; render(); void sync(); }
@@ -319,6 +336,7 @@
   window.addEventListener('storage', event => {
     if (event.key === sharedKey || event.key === localKey) {
       // Another open copy of this sheet may have just queued a tap.
+      invalidateConnection();
       shared = read(sharedKey, null);
       local = read(localKey, {});
       render();
@@ -335,8 +353,10 @@
     if (installToken && !shared && navigator.onLine && !changing) void acceptInvite(installToken, false);
     else void sync();
   };
-  window.addEventListener('online', resumeInstall);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeInstall(); });
+  window.addEventListener('offline', () => { invalidateConnection(); render(); });
+  window.addEventListener('online', () => { invalidateConnection(); render(); resumeInstall(); });
+  window.addEventListener('pageshow', event => { if (event.persisted) { invalidateConnection(); render(); resumeInstall(); } });
+  document.addEventListener('visibilitychange', () => { invalidateConnection(); render(); if (!document.hidden) resumeInstall(); });
   // Poll only while the shared sheet is open. No Firebase connection in local mode.
   setInterval(() => void sync(), 5000);
   if (window.petMealInvite && !installed) {

@@ -42,7 +42,7 @@ function environment(file,deviceLanguage='ja',initial={},transport){
   const sheet=new Element();sheet.id='sheet';const reset=new Element('button');reset.id='reset';reset.textContent=docEl.lang==='en'?'Reset':'リセット';sheet.append(reset);body.append(sheet);
   const controls=new Element('section');controls.id='sharing';for(const [id,value] of [['sync-status','この端末だけに保存'],['start-sharing','家族と共有する'],['invite','家族を招待'],['join-sharing','招待リンクで参加'],['stop-sharing','この端末の共有をやめる']]){const el=new Element(id==='sync-status'?'p':'button');el.id=id;el.textContent=value;controls.append(el);}body.append(controls);
   const store=new Map(Object.entries(initial));const writes=[];let failSave=false,confirmResult=false;const events={};let confirms=[],alerts=[]; const intervals=[];
-  const document={body,head,documentElement:docEl,hidden:false,cookie:'',title:'ごはんあげた？',currentScript:{src:'https://example.test/pet-meal-check/i18n.js'},getElementById:id=>body.querySelector('#'+id),querySelector:s=>body.querySelector(s),addEventListener:()=>{},createElement:tag=>{const el=new Element(tag);if(tag==='template'){el.content=new Element('fragment');Object.defineProperty(el,'innerHTML',{set:html=>parse(html,el.content),get:()=>el.content.innerHTML});}return el;}};
+  const document={body,head,documentElement:docEl,events:{},hidden:false,cookie:'',title:'ごはんあげた？',currentScript:{src:'https://example.test/pet-meal-check/i18n.js'},getElementById:id=>body.querySelector('#'+id),querySelector:s=>body.querySelector(s),addEventListener:(n,fn)=>(document.events[n]??=[]).push(fn),createElement:tag=>{const el=new Element(tag);if(tag==='template'){el.content=new Element('fragment');Object.defineProperty(el,'innerHTML',{set:html=>parse(html,el.content),get:()=>el.content.innerHTML});}return el;}};
   const window={addEventListener:(name,fn)=>(events[name]??=[]).push(fn),dispatchEvent:event=>(events[event.type]||[]).forEach(fn=>fn(event)),matchMedia:()=>({matches:false})};
   const sandbox={window,document,navigator:{language:deviceLanguage,languages:[deviceLanguage],onLine:!!transport},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>{if(failSave)throw Error('quota');store.set(k,v);writes.push(k);},removeItem:k=>store.delete(k)},MutationObserver:class{constructor(fn){this.fn=fn;}observe(){}},Event:class{constructor(type){this.type=type;}},URL,URLSearchParams,AbortController,location:{pathname:'/pet-meal-check/',origin:'https://example.test'},crypto:require('node:crypto').webcrypto,structuredClone,setInterval:fn=>intervals.push(fn),setTimeout:()=>{},clearTimeout:()=>{},alert:v=>alerts.push(v),confirm:v=>{confirms.push(v);return confirmResult;},fetch:transport||(()=>{throw Error('Unexpected network request');}),console};
   vm.createContext(sandbox);for(const f of ['i18n-data.js','i18n-pages.js','i18n.js','check-sync.js'])vm.runInContext(read(f),sandbox,{filename:f});
@@ -113,7 +113,7 @@ async function test(name,fn){await fn();count++;console.log('PASS '+name);}
     a.navigator.onLine=false;b.navigator.onLine=false;taps(a)[0].onclick();taps(b)[0].onclick();taps(b)[0].onclick();
     a.navigator.onLine=true;a.poll();await settle();b.navigator.onLine=true;b.poll();await settle();
     assert.equal(s.cells['0-0'].value,true);assert.ok(pressed(b,0));assert.equal(shared(b).queue.length,0);
-    const status=b.document.getElementById('sync-status').textContent;assert.equal(status,b.window.petMealI18n.translate('同じマスの変更が重なったため、先に共有された記録を残しました'));assert.ok(!/[ぁ-んァ-ヶ一-龯]/.test(status));
+    const status=b.document.getElementById('sync-status').textContent;assert.equal(status,b.window.petMealI18n.translate('前回の同期は完了・家族と共有')+' / '+b.window.petMealI18n.translate('同じマスの変更が重なったため、先に共有された記録を残しました'));assert.ok(!/[ぁ-んァ-ヶ一-龯]/.test(status));
   });
   await test('network failure retains queue and retries without reinitializing records',async()=>{
     const s=server(),a=client(s);await settle();s.fail=true;taps(a)[3].onclick();await settle();
@@ -155,6 +155,77 @@ async function test(name,fn){await fn();count++;console.log('PASS '+name);}
   await test('no usage hook on restore, reset, language changes or storage refresh',async()=>{
     const a=environment('index.html','ja',{'pet-meal-check-dog-v1':JSON.stringify({'0-0':true})});let calls=0;a.window.petMealUsage={recordStored:()=>calls++};
     a.window.petMealI18n.setLanguage('en');a.events.storage.forEach(fn=>fn({key:'pet-meal-check-dog-v1'}));a.setConfirm(true);a.document.getElementById('reset').onclick();assert.equal(calls,0);assert.equal(pressed(a,0),false);
+  });
+
+  const status=a=>a.document.getElementById('sync-status').textContent;
+  const equals=(a,jp)=>assert.equal(status(a),a.window.petMealI18n.translate(jp));
+  await test('cached shared data never claims sync before pending fetch resolves',async()=>{
+    const s=server();let release;const gate=new Promise(r=>release=r);
+    const a=client({...s,fetch:async(...args)=>{await gate;return s.fetch(...args);}});
+    equals(a,'共有を確認中・端末の記録を表示中');release();await settle();
+    equals(a,'前回の同期は完了・家族と共有');
+  });
+  await test('offline startup with cached data displays offline without network',async()=>{
+    const a=environment('index.html','ja',{'pet-meal-sharing-dog-v1':JSON.stringify({room,token,cells:emptyCells(),queue:[]})});
+    await settle();equals(a,'オフライン・端末の記録を表示中');
+  });
+  await test('offline event clears previous successful status and preserves records',async()=>{
+    const s=server(),a=client(s);await settle();const before=JSON.stringify(shared(a));
+    a.navigator.onLine=false;a.events.offline.forEach(fn=>fn());
+    equals(a,'オフライン・端末の記録を表示中');assert.equal(JSON.stringify(shared(a)),before);
+    taps(a)[0].onclick();equals(a,'オフライン・未送信の記録があります');
+    a.navigator.onLine=true;a.events.online.forEach(fn=>fn());await settle();
+    equals(a,'前回の同期は完了・家族と共有');assert.equal(shared(a).queue.length,0);
+  });
+  await test('read failure cannot retain success status and recovery is explicit',async()=>{
+    const s=server(),a=client(s);await settle();s.fail=true;a.poll();await settle();
+    equals(a,'共有に接続できません。端末の記録を表示中');
+    s.fail=false;a.poll();await settle();equals(a,'前回の同期は完了・家族と共有');
+  });
+  await test('hidden cached session is unverified, not synced',async()=>{
+    const s=server(),a=client(s);await settle();a.document.hidden=true;
+    a.document.events.visibilitychange.forEach(fn=>fn());
+    equals(a,'共有の接続は未確認・端末の記録を表示中');
+  });
+  await test('all new status strings translate in four languages without storage writes',async()=>{
+    const s=server(),a=client(s);await settle();
+    const keys=['オフライン・未送信の記録があります','オフライン・端末の記録を表示中','共有を確認中・端末の記録を表示中','前回の同期は完了・家族と共有','共有の接続は未確認・端末の記録を表示中'];
+    const before=JSON.stringify(shared(a)),writes=a.writes.length;
+    for(const lang of ['ja','en','es','nl']){
+      a.window.petMealI18n.setLanguage(lang);equals(a,'前回の同期は完了・家族と共有');
+      for(const key of keys){const tr=a.window.petMealI18n.translate(key);assert.ok(tr);if(lang!=='ja')assert.ok(!/[ぁ-んァ-ヶ一-龯]/.test(tr));}
+    }
+    assert.equal(JSON.stringify(shared(a)),before);
+    assert.equal(a.writes.filter(k=>k==='pet-meal-sharing-dog-v1').length,1);
+  });
+
+  await test('late pre-reconnect response cannot confirm a resumed session',async()=>{
+    const s=server();let release;const gate=new Promise(r=>release=r);let first=true;
+    const a=client({...s,fetch:async(...args)=>{
+      const response=await s.fetch(...args);
+      if(first){first=false;const json=response.json;response.json=async()=>{const captured=await json();await gate;return captured;};}
+      return response;
+    }});
+    await settle();
+    a.navigator.onLine=false;a.events.offline.forEach(fn=>fn());
+    a.navigator.onLine=true;a.events.online.forEach(fn=>fn());
+    release();await settle();
+    assert.notEqual(status(a),a.window.petMealI18n.translate('前回の同期は完了・家族と共有'));
+  });
+
+  await test('visibility resume rejects old confirmation and a later poll confirms',async()=>{
+    const s=server();let release;const gate=new Promise(r=>release=r);let first=true;
+    const a=client({...s,fetch:async(...args)=>{const response=await s.fetch(...args);if(first){first=false;const json=response.json;response.json=async()=>{const captured=await json();await gate;return captured;};}return response;}});
+    await settle();a.document.hidden=true;a.document.events.visibilitychange.forEach(fn=>fn());
+    a.document.hidden=false;a.document.events.visibilitychange.forEach(fn=>fn());
+    release();await settle();equals(a,'共有の接続は未確認・端末の記録を表示中');
+    a.poll();await settle();equals(a,'前回の同期は完了・家族と共有');
+  });
+  await test('BFCache pageshow invalidates a previous success until fresh confirmation',async()=>{
+    const s=server(),a=client(s);await settle();equals(a,'前回の同期は完了・家族と共有');
+    const before=JSON.stringify(shared(a));a.events.pageshow.forEach(fn=>fn({persisted:true}));
+    equals(a,'共有を確認中・端末の記録を表示中');assert.equal(JSON.stringify(shared(a)),before);
+    await settle();equals(a,'前回の同期は完了・家族と共有');
   });
   console.log(`${count} shared-sync tests passed (two DOM clients and simulated Firebase transport; no live Firebase or iPhone verification).`);
 })().catch(error=>{console.error(error);process.exitCode=1;});

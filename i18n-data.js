@@ -1,5 +1,12 @@
 /* UI translations only. No feeding records or invitation tokens are stored here. */
 window.petMealTranslations = [
+  ["オフライン・未送信の記録があります", "Offline — some records have not been sent", "Sin conexión: hay registros sin enviar", "Offline: er zijn nog niet verzonden gegevens"],
+  ["オフライン・端末の記録を表示中", "Offline — showing records on this device", "Sin conexión: mostrando registros de este dispositivo", "Offline: gegevens op dit apparaat worden getoond"],
+  ["共有を確認中・端末の記録を表示中", "Checking shared records — showing this device’s records", "Comprobando registros compartidos: mostrando los de este dispositivo", "Gedeelde gegevens controleren: lokale gegevens worden getoond"],
+  ["前回の同期は完了・家族と共有", "Last sync completed — family sharing", "Última sincronización completada: compartido en familia", "Laatste synchronisatie voltooid: delen met gezin"],
+  ["共有の接続は未確認・端末の記録を表示中", "Shared connection not verified — showing this device’s records", "Conexión compartida sin verificar: mostrando registros locales", "Gedeelde verbinding niet gecontroleerd: lokale gegevens worden getoond"],
+  ["ネットにつながった状態で「前回の同期は完了・家族と共有」と表示されるか確認してね。", "Connect to the internet and check for “Last sync completed — family sharing”.", "Conéctate a internet y comprueba que aparezca «Última sincronización completada: compartido en familia».", "Maak verbinding met internet en controleer of ‘Laatste synchronisatie voltooid: delen met gezin’ verschijnt."],
+
   ['ごはんあげた？', 'Fed Yet?', '¿Ya comió?', 'Al gevoerd?'],
   ['犬', 'Dog', 'Perro', 'Hond'], ['猫', 'Cat', 'Gato', 'Kat'],
   ['言語', 'Language', 'Idioma', 'Taal'],
