@@ -8,8 +8,8 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 const base = 'https://8810h8810.github.io/pet-meal-check/';
-const version = 'pet-meal-pwa-v15-consent-v2';
-const oldVersion = 'pet-meal-pwa-v14-internal-exclusion';
+const version = 'pet-meal-pwa-v16-sync-status';
+const oldVersion = 'pet-meal-pwa-v15-consent-v2';
 let passed = 0;
 
 function worker(options = {}) {
