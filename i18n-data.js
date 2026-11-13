@@ -1,5 +1,6 @@
 /* UI translations only. No feeding records or invitation tokens are stored here. */
 window.petMealTranslations = [
+["ごはんチェックの使い方", "Feeding chart guide", "Guía de la tabla de comidas", "Handleiding voor het voerschema"],
   ["オフライン・未送信の記録があります", "Offline — some records have not been sent", "Sin conexión: hay registros sin enviar", "Offline: er zijn nog niet verzonden gegevens"],
   ["オフライン・端末の記録を表示中", "Offline — showing records on this device", "Sin conexión: mostrando registros de este dispositivo", "Offline: gegevens op dit apparaat worden getoond"],
   ["共有を確認中・端末の記録を表示中", "Checking shared records — showing this device’s records", "Comprobando registros compartidos: mostrando los de este dispositivo", "Gedeelde gegevens controleren: lokale gegevens worden getoond"],
