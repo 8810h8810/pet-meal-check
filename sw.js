@@ -1,6 +1,7 @@
-const CACHE = 'pet-meal-pwa-v16-sync-status';
+const CACHE = 'pet-meal-pwa-v17-practical-guide';
 const ROOT = new URL('./', self.location.href);
 const ASSETS = [
+  './guide/', './guide/index.html', './guide/translations.js',
   './analytics-consent.js', './analytics-consent.css',
   './assets/dog-es-v3.png', './assets/dog-nl-v3.png', './assets/cat-es-v3.png', './assets/cat-nl-v3.png',
   './i18n.js', './i18n-data.js', './i18n-pages.js', './i18n.css', './rakuten-products.js',

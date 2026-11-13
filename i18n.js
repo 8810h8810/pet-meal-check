@@ -123,7 +123,8 @@
   if (document.body.dataset.pet && !document.querySelector('a[data-policy-link]')) {
     const footer=document.createElement('p'); footer.className='language-settings';
     const link=document.createElement('a'); link.dataset.policyLink=''; link.href=new URL('privacy/',scriptURL).href; link.textContent='プライバシーポリシー';
-    footer.appendChild(link); document.body.appendChild(footer);
+    const guide=document.createElement('a'); guide.href=new URL('guide/',scriptURL).href; guide.textContent='ごはんチェックの使い方';
+    footer.append(guide,' · ',link); document.body.appendChild(footer);
   }
   refresh();
   const observer=new MutationObserver(mutations=>{
